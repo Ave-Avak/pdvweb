@@ -205,6 +205,23 @@ function actif(string $chemin, string $classe = 'text-blue-600 font-semibold'): 
 
 
 /**
+ * nom_membre() — affiche le nom complet d'un membre, ou "Utilisateur supprimé"
+ * si le compte a été anonymisé (RGPD).
+ *
+ * @param array|null $row  Ligne contenant prenom, nom et optionnellement date_anonymisation
+ * @return string
+ */
+function nom_membre(?array $row): string
+{
+    if (!$row) return 'Inconnu';
+    if (!empty($row['date_anonymisation'])) {
+        return 'Utilisateur supprimé';
+    }
+    return trim(($row['prenom'] ?? '') . ' ' . ($row['nom'] ?? ''));
+}
+
+
+/**
  * Récupère un paramètre applicatif (depuis la table `parametre`).
  * Mis en cache statique pour éviter de relancer la requête à chaque appel.
  *

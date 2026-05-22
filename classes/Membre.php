@@ -332,6 +332,108 @@ class Membre
 
 
     // =================================================================
+    // RGPD - DROIT À L'OUBLI (anonymisation)
+    // =================================================================
+
+    /**
+     * Anonymise un compte (conformité RGPD article 17 : droit à l'oubli).
+     *
+     * Ne supprime PAS l'enregistrement (pour préserver l'intégrité des
+     * commentaires, factures, etc.) mais remplace toutes les données
+     * personnelles identifiables par des valeurs neutres.
+     *
+     * Effets :
+     *   - Le compte ne peut plus se connecter (mot de passe aléatoire impossible)
+     *   - Le compte est marqué comme indésirable (verrouillé)
+     *   - Les commentaires/billets passés apparaissent sous "Utilisateur supprimé"
+     *   - L'avatar physique est supprimé du disque
+     *   - La date d'anonymisation est enregistrée (traçabilité)
+     *   - Audit log
+     *
+     * @param int $idMembre L'ID du membre à anonymiser
+     * @return bool true si succès
+     */
+    public static function anonymiser(int $idMembre): bool
+    {
+        $membre = self::trouverParId($idMembre);
+        if (!$membre) {
+            return false;
+        }
+
+        // Empêcher la double anonymisation
+        if (!empty($membre['date_anonymisation'])) {
+            return false;
+        }
+
+        $pdo = Db::pdo();
+        $pdo->beginTransaction();
+
+        try {
+            // 1. Supprimer physiquement l'avatar si présent (RGPD : effacement du fichier)
+            if (!empty($membre['avatar'])) {
+                Upload::supprimer($membre['avatar'], UPLOADS_PATH . '/avatars');
+            }
+
+            // 2. Construire des valeurs anonymes uniques (pour respecter les UNIQUE)
+            $suffixe = $idMembre . '_' . bin2hex(random_bytes(4));
+
+            $loginAnonyme = 'supprime_' . $suffixe;
+            $emailAnonyme = 'supprime_' . $suffixe . '@anonymise.local';
+
+            // 3. Mot de passe aléatoire impossible à deviner (60 caractères)
+            $mdpAleatoire = bin2hex(random_bytes(30));
+            $hashAleatoire = password_hash($mdpAleatoire, PASSWORD_DEFAULT);
+
+            // 4. UPDATE de toutes les colonnes personnelles
+            $req = $pdo->prepare(
+                "UPDATE membre SET
+                    nom = 'Utilisateur',
+                    prenom = 'supprimé',
+                    date_naissance = '1900-01-01',
+                    email = ?,
+                    login = ?,
+                    mot_passe = ?,
+                    avatar = NULL,
+                    indesirable = 1,
+                    date_anonymisation = NOW()
+                 WHERE id_membre = ?"
+            );
+            $req->execute([$emailAnonyme, $loginAnonyme, $hashAleatoire, $idMembre]);
+
+            // 5. Nettoyage des données liées non essentielles
+            //    - log_connexion : on supprime l'historique (pas obligatoire mais cohérent)
+            //    - adresses : on supprime (pas besoin pour archivage légal)
+            //    - newsletter_abonne : désabonnement automatique
+            //    - tokens : tous invalidés
+            //    - tentatives connexion : effacées
+            //    On GARDE : commentaires, billets, achats/factures, audit_log
+            $pdo->prepare("DELETE FROM adresse WHERE id_membre = ?")->execute([$idMembre]);
+            $pdo->prepare("UPDATE newsletter_abonne SET actif = 0, date_desabo = NOW()
+                           WHERE id_membre = ?")->execute([$idMembre]);
+            $pdo->prepare("DELETE FROM token WHERE id_membre = ?")->execute([$idMembre]);
+            $pdo->prepare("DELETE FROM tentative_connexion WHERE login_essaye = ?")
+                ->execute([$membre['login']]);
+
+            // 6. Audit log
+            self::ajouterAudit(
+                Auth::id() ?? $idMembre,  // qui a fait l'action
+                'membre.anonymisation',
+                'membre',
+                $idMembre,
+                ['ancien_login' => $membre['login']]
+            );
+
+            $pdo->commit();
+            return true;
+
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+    }
+
+
+    // =================================================================
     // UTILITAIRES PRIVÉS
     // =================================================================
 

@@ -2,7 +2,11 @@
 /**
  * public/commentaire_delete.php
  * ---------------------------------------------------------------------
- * CONTRÔLEUR : Suppression d'un commentaire (auteur ou admin).
+ * CONTRÔLEUR : Suppression (soft delete) d'un commentaire.
+ *
+ * Autorisé pour : l'auteur (sa propre suppression) OU l'admin (modération).
+ * Le commentaire n'est pas effacé : il est juste marqué comme supprimé,
+ * pour permettre la restauration et conserver une trace d'audit.
  * ---------------------------------------------------------------------
  */
 
@@ -30,6 +34,7 @@ if (!$commentaire) {
     exit;
 }
 
+// Vérification des droits : auteur OU admin
 $estAuteur = ((int)$commentaire['id_membre'] === Auth::id());
 if (!$estAuteur && !Auth::estAdmin()) {
     Flash::erreur('Vous n\'avez pas le droit de supprimer ce commentaire.');
@@ -37,7 +42,9 @@ if (!$estAuteur && !Auth::estAdmin()) {
     exit;
 }
 
-Commentaire::supprimer($idCommentaire);
+// Soft delete : on passe l'ID du membre qui supprime pour la traçabilité
+Commentaire::supprimer($idCommentaire, Auth::id());
+
 Flash::succes($estAuteur ? 'Commentaire supprimé.' : 'Commentaire modéré.');
 
 header('Location: ' . url('/billet.php?id=' . $commentaire['id_billet'] . '#commentaires'));

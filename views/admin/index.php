@@ -54,6 +54,19 @@ require_once INCLUDES_PATH . '/header.php';
             <p class="text-sm text-gray-600">Créer, modifier ou supprimer les billets</p>
         </a>
 
+        <a href="<?= url('/admin/corbeille.php') ?>"
+           class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition group">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center group-hover:bg-amber-200 transition">
+                    <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22"/>
+                    </svg>
+                </div>
+                <h3 class="font-semibold text-gray-900 group-hover:text-amber-600 transition">Corbeille</h3>
+            </div>
+            <p class="text-sm text-gray-600">Restaurer des billets ou commentaires supprimés</p>
+        </a>
+
         <div class="bg-gray-50 rounded-xl border border-dashed border-gray-300 p-5 opacity-60">
             <div class="flex items-center gap-3 mb-2">
                 <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">

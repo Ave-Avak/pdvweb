@@ -47,8 +47,10 @@ CREATE TABLE membre (
   indesirable      TINYINT(1)   NOT NULL DEFAULT 0,         -- bloqué par l'admin
   derniere_connexion DATETIME   DEFAULT NULL,
   date_inscription DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  date_anonymisation DATETIME   DEFAULT NULL,               -- RGPD : compte anonymisé
   INDEX idx_membre_statut (statut),
-  INDEX idx_membre_indesirable (indesirable)
+  INDEX idx_membre_indesirable (indesirable),
+  INDEX idx_membre_anonyme (date_anonymisation)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -508,10 +510,15 @@ CREATE TABLE billet (
   titre       VARCHAR(200) NOT NULL,
   corps       TEXT         NOT NULL,
   date_billet DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  date_suppression DATETIME NULL DEFAULT NULL,           -- soft delete
+  id_membre_suppression INT UNSIGNED NULL DEFAULT NULL,  -- qui a supprimé
   CONSTRAINT fk_billet_membre
     FOREIGN KEY (id_membre) REFERENCES membre(id_membre) ON DELETE CASCADE,
+  CONSTRAINT fk_billet_suppression
+    FOREIGN KEY (id_membre_suppression) REFERENCES membre(id_membre) ON DELETE SET NULL,
   INDEX idx_billet_titre (titre),
-  INDEX idx_billet_date  (date_billet)
+  INDEX idx_billet_date  (date_billet),
+  INDEX idx_billet_supp  (date_suppression)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -524,11 +531,16 @@ CREATE TABLE commentaire (
   id_membre      INT UNSIGNED NOT NULL,
   corps          TEXT         NOT NULL,
   date_comm      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  date_suppression DATETIME NULL DEFAULT NULL,           -- soft delete
+  id_membre_suppression INT UNSIGNED NULL DEFAULT NULL,  -- qui a supprimé
   CONSTRAINT fk_comm_billet
     FOREIGN KEY (id_billet) REFERENCES billet(id_billet) ON DELETE CASCADE,
   CONSTRAINT fk_comm_membre
     FOREIGN KEY (id_membre) REFERENCES membre(id_membre) ON DELETE CASCADE,
-  INDEX idx_comm_membre_date (id_membre, date_comm)
+  CONSTRAINT fk_comm_suppression
+    FOREIGN KEY (id_membre_suppression) REFERENCES membre(id_membre) ON DELETE SET NULL,
+  INDEX idx_comm_membre_date (id_membre, date_comm),
+  INDEX idx_comm_supp (date_suppression)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

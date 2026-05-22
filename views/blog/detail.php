@@ -163,7 +163,8 @@ $idMembre      = Auth::id();
             <?php foreach ($commentaires as $c): ?>
                 <?php
                 $estAuteur = ((int)$c['id_membre'] === $idMembre);
-                $peutModifier = $estAuteur || $estAdmin;
+                $peutModifier  = $estAuteur;                 // SEUL l'auteur peut modifier (intégrité du discours)
+                $peutSupprimer = $estAuteur || $estAdmin;    // L'admin peut modérer (supprimer)
                 $jAime = $mesLikesCommentaires[$c['id_commentaire']] ?? false;
                 ?>
                 <article id="c<?= (int)$c['id_commentaire'] ?>"
@@ -188,32 +189,38 @@ $idMembre      = Auth::id();
                             </time>
                         </div>
 
-                        <?php if ($peutModifier): ?>
+                        <?php if ($peutModifier || $peutSupprimer): ?>
                             <div class="flex gap-1">
-                                <!-- Édition : ouvre le textarea -->
-                                <button type="button"
-                                        onclick="document.getElementById('edit_c<?= (int)$c['id_commentaire'] ?>').classList.toggle('hidden')"
-                                        class="text-gray-400 hover:text-primary-600 transition p-1"
-                                        title="Modifier">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                    </svg>
-                                </button>
-                                <!-- Suppression -->
-                                <form method="post" action="<?= url('/commentaire_delete.php') ?>" class="inline">
-                                    <?= Csrf::champ() ?>
-                                    <input type="hidden" name="id_commentaire" value="<?= (int)$c['id_commentaire'] ?>">
-                                    <button type="submit"
-                                            data-confirm="Supprimer ce commentaire ?"
-                                            class="text-gray-400 hover:text-red-600 transition p-1"
-                                            title="<?= $estAuteur ? 'Supprimer' : 'Modérer' ?>">
+                                <!-- Modification : SEUL l'auteur peut modifier son commentaire
+                                     (intégrité du discours - l'admin ne peut PAS) -->
+                                <?php if ($peutModifier): ?>
+                                    <button type="button"
+                                            onclick="document.getElementById('edit_c<?= (int)$c['id_commentaire'] ?>').classList.toggle('hidden')"
+                                            class="text-gray-400 hover:text-primary-600 transition p-1"
+                                            title="Modifier mon commentaire">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22"/>
+                                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                         </svg>
                                     </button>
-                                </form>
+                                <?php endif; ?>
+
+                                <!-- Suppression : auteur OU admin (modération) -->
+                                <?php if ($peutSupprimer): ?>
+                                    <form method="post" action="<?= url('/commentaire_delete.php') ?>" class="inline">
+                                        <?= Csrf::champ() ?>
+                                        <input type="hidden" name="id_commentaire" value="<?= (int)$c['id_commentaire'] ?>">
+                                        <button type="submit"
+                                                data-confirm="Supprimer ce commentaire ?"
+                                                class="text-gray-400 hover:text-red-600 transition p-1"
+                                                title="<?= $estAuteur ? 'Supprimer' : 'Modérer (supprimer)' ?>">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22"/>
+                                            </svg>
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
                             </div>
                         <?php endif; ?>
                     </header>

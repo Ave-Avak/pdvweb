@@ -4,7 +4,10 @@
  * ---------------------------------------------------------------------
  * CONTRÔLEUR : Modification d'un commentaire.
  *
- * Autorisé pour : l'auteur lui-même OU un admin.
+ * IMPORTANT : seul l'AUTEUR peut modifier son commentaire.
+ * L'admin n'a PAS le droit de modifier (intégrité du discours,
+ * exigence éthique et légale - diffamation potentielle).
+ * L'admin peut uniquement SUPPRIMER (modération).
  * ---------------------------------------------------------------------
  */
 
@@ -33,10 +36,9 @@ if (!$commentaire) {
     exit;
 }
 
-// Vérification des droits (auteur ou admin)
-$estAuteur = ((int)$commentaire['id_membre'] === Auth::id());
-if (!$estAuteur && !Auth::estAdmin()) {
-    Flash::erreur('Vous n\'avez pas le droit de modifier ce commentaire.');
+// SEUL L'AUTEUR peut modifier son commentaire (l'admin NE PEUT PAS)
+if ((int)$commentaire['id_membre'] !== Auth::id()) {
+    Flash::erreur('Vous ne pouvez modifier que vos propres commentaires.');
     header('Location: ' . url('/billet.php?id=' . $commentaire['id_billet']));
     exit;
 }

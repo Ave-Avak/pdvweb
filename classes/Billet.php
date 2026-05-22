@@ -4,25 +4,37 @@
  * ---------------------------------------------------------------------
  * Modèle "Billet" : billets de blog publiés par les administrateurs.
  *
- * Toutes les méthodes sont statiques pour rester cohérent avec
- * Membre / Minichat.
+ * IMPORTANT : implémente le SOFT DELETE.
+ *   - La méthode supprimer() ne fait PAS de DELETE en BDD.
+ *   - Elle marque le billet comme supprimé (date_suppression, id_membre_suppression).
+ *   - Toutes les requêtes de lecture filtrent les billets supprimés.
+ *
+ * Avantages :
+ *   - Modération réversible (l'admin peut restaurer)
+ *   - Audit (qui a supprimé quoi, quand)
+ *   - Pas de perte des commentaires liés
  * ---------------------------------------------------------------------
  */
 
 class Billet
 {
     /**
-     * Récupère un billet par son ID, avec infos auteur.
+     * Récupère un billet (non supprimé) par son ID, avec infos auteur.
+     *
+     * @param int  $id
+     * @param bool $inclureSupprimes Si true, retourne aussi les billets supprimés (pour admin)
      */
-    public static function trouverParId(int $id): ?array
+    public static function trouverParId(int $id, bool $inclureSupprimes = false): ?array
     {
+        $clauseSupp = $inclureSupprimes ? '' : ' AND b.date_suppression IS NULL';
+
         $req = Db::pdo()->prepare(
             "SELECT b.*,
                     u.id_membre, u.prenom AS auteur_prenom, u.nom AS auteur_nom,
                     u.login AS auteur_login, u.avatar AS auteur_avatar
              FROM billet b
              INNER JOIN membre u ON u.id_membre = b.id_membre
-             WHERE b.id_billet = ?"
+             WHERE b.id_billet = ?" . $clauseSupp
         );
         $req->execute([$id]);
         $billet = $req->fetch();
@@ -31,14 +43,7 @@ class Billet
 
     /**
      * Liste les billets avec pagination, recherche et tri.
-     *
-     * @param array $opts Options :
-     *   - 'recherche' string   : terme à chercher dans le titre
-     *   - 'tag'       int      : filtrer par id_tag
-     *   - 'tri'       string   : 'recents' (def), 'populaires', 'commentes'
-     *   - 'page'      int      : page courante (1 par défaut)
-     *   - 'parPage'   int      : nb par page (10 par défaut)
-     * @return array ['billets' => [...], 'total' => int, 'totalPages' => int]
+     * Exclut automatiquement les billets supprimés.
      */
     public static function lister(array $opts = []): array
     {
@@ -49,8 +54,8 @@ class Billet
         $parPage   = max(1, (int)($opts['parPage'] ?? 10));
         $offset    = ($page - 1) * $parPage;
 
-        // Construction dynamique de la requête
-        $where  = [];
+        // Filtre soft delete TOUJOURS appliqué pour les listes publiques
+        $where  = ['b.date_suppression IS NULL'];
         $params = [];
 
         if ($recherche !== '') {
@@ -63,28 +68,29 @@ class Billet
             $params[] = $idTag;
         }
 
-        $clauseWhere = $where ? ' WHERE ' . implode(' AND ', $where) : '';
+        $clauseWhere = ' WHERE ' . implode(' AND ', $where);
 
-        // ORDER BY selon le tri demandé
         $orderBy = match ($tri) {
             'populaires' => 'nb_likes DESC, b.date_billet DESC',
             'commentes'  => 'nb_commentaires DESC, b.date_billet DESC',
-            default      => 'b.date_billet DESC',  // 'recents'
+            default      => 'b.date_billet DESC',
         };
 
-        // Comptage total (pour la pagination)
+        // Comptage total
         $reqTotal = Db::pdo()->prepare(
             "SELECT COUNT(*) FROM billet b" . $clauseWhere
         );
         $reqTotal->execute($params);
         $total = (int)$reqTotal->fetchColumn();
 
-        // Requête principale : billets + compteurs (likes + commentaires)
+        // Requête principale : on compte aussi les commentaires NON supprimés
         $sql = "SELECT b.*,
                        u.prenom AS auteur_prenom, u.nom AS auteur_nom,
                        u.login AS auteur_login, u.avatar AS auteur_avatar,
-                       (SELECT COUNT(*) FROM commentaire WHERE id_billet = b.id_billet) AS nb_commentaires,
-                       (SELECT COUNT(*) FROM like_contenu WHERE type = 'billet' AND id_cible = b.id_billet) AS nb_likes
+                       (SELECT COUNT(*) FROM commentaire
+                        WHERE id_billet = b.id_billet AND date_suppression IS NULL) AS nb_commentaires,
+                       (SELECT COUNT(*) FROM like_contenu
+                        WHERE type = 'billet' AND id_cible = b.id_billet) AS nb_likes
                 FROM billet b
                 INNER JOIN membre u ON u.id_membre = b.id_membre
                 $clauseWhere
@@ -104,6 +110,24 @@ class Billet
     }
 
     /**
+     * Liste les billets SUPPRIMÉS (page corbeille admin).
+     */
+    public static function listerSupprimes(): array
+    {
+        $req = Db::pdo()->query(
+            "SELECT b.*,
+                    u.prenom AS auteur_prenom, u.nom AS auteur_nom,
+                    s.prenom AS supp_prenom, s.nom AS supp_nom
+             FROM billet b
+             INNER JOIN membre u ON u.id_membre = b.id_membre
+             LEFT JOIN membre s ON s.id_membre = b.id_membre_suppression
+             WHERE b.date_suppression IS NOT NULL
+             ORDER BY b.date_suppression DESC"
+        );
+        return $req->fetchAll();
+    }
+
+    /**
      * Crée un nouveau billet.
      */
     public static function creer(int $idAuteur, string $titre, string $corps, array $idsTags = []): int
@@ -117,7 +141,6 @@ class Billet
             $req->execute([$idAuteur, $titre, $corps]);
             $idBillet = (int)$pdo->lastInsertId();
 
-            // Liaison des tags
             self::associerTags($idBillet, $idsTags);
 
             $pdo->commit();
@@ -141,7 +164,6 @@ class Billet
             );
             $req->execute([$titre, $corps, $idBillet]);
 
-            // Remplacement complet des tags
             $pdo->prepare("DELETE FROM billet_tag WHERE id_billet = ?")->execute([$idBillet]);
             self::associerTags($idBillet, $idsTags);
 
@@ -154,11 +176,32 @@ class Billet
     }
 
     /**
-     * Supprime un billet (et ses commentaires + likes via CASCADE BDD).
+     * SUPPRIME (soft) un billet.
+     * Le billet n'est plus visible mais reste en BDD pour audit/restauration.
+     *
+     * @param int $idBillet
+     * @param int $idMembreSupp ID du membre qui effectue la suppression
      */
-    public static function supprimer(int $idBillet): bool
+    public static function supprimer(int $idBillet, int $idMembreSupp): bool
     {
-        $req = Db::pdo()->prepare("DELETE FROM billet WHERE id_billet = ?");
+        $req = Db::pdo()->prepare(
+            "UPDATE billet
+             SET date_suppression = NOW(), id_membre_suppression = ?
+             WHERE id_billet = ? AND date_suppression IS NULL"
+        );
+        return $req->execute([$idMembreSupp, $idBillet]);
+    }
+
+    /**
+     * RESTAURE un billet précédemment supprimé.
+     */
+    public static function restaurer(int $idBillet): bool
+    {
+        $req = Db::pdo()->prepare(
+            "UPDATE billet
+             SET date_suppression = NULL, id_membre_suppression = NULL
+             WHERE id_billet = ?"
+        );
         return $req->execute([$idBillet]);
     }
 
@@ -177,9 +220,6 @@ class Billet
         return $req->fetchAll();
     }
 
-    /**
-     * Associe des tags à un billet (méthode utilitaire interne).
-     */
     private static function associerTags(int $idBillet, array $idsTags): void
     {
         if (empty($idsTags)) return;
@@ -196,10 +236,22 @@ class Billet
     }
 
     /**
-     * Compte total des billets (stats admin).
+     * Compte les billets actifs (non supprimés).
      */
     public static function compterTous(): int
     {
-        return (int)Db::pdo()->query("SELECT COUNT(*) FROM billet")->fetchColumn();
+        return (int)Db::pdo()->query(
+            "SELECT COUNT(*) FROM billet WHERE date_suppression IS NULL"
+        )->fetchColumn();
+    }
+
+    /**
+     * Compte les billets supprimés (pour le bandeau "corbeille").
+     */
+    public static function compterSupprimes(): int
+    {
+        return (int)Db::pdo()->query(
+            "SELECT COUNT(*) FROM billet WHERE date_suppression IS NOT NULL"
+        )->fetchColumn();
     }
 }

@@ -2,7 +2,11 @@
 /**
  * public/admin/billet_supprimer.php
  * ---------------------------------------------------------------------
- * CONTRÔLEUR ADMIN : Suppression d'un billet.
+ * CONTRÔLEUR ADMIN : Suppression (soft) d'un billet.
+ *
+ * Le billet n'est pas effacé : marqué comme supprimé, ses commentaires
+ * deviennent inaccessibles (mais conservés en BDD pour audit).
+ * Restauration possible depuis la page corbeille.
  * ---------------------------------------------------------------------
  */
 
@@ -28,7 +32,9 @@ if ($idBillet <= 0) {
     exit;
 }
 
-Billet::supprimer($idBillet);
-Flash::succes('Billet supprimé.');
+// Soft delete
+Billet::supprimer($idBillet, Auth::id());
+
+Flash::succes('Billet supprimé (visible dans la corbeille pour restauration).');
 header('Location: ' . url('/admin/billets.php'));
 exit;

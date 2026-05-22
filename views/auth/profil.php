@@ -235,6 +235,31 @@ require_once INCLUDES_PATH . '/header.php';
         </dl>
     </div>
 
+
+    <!-- ==============================================================
+         CARTE 5 — Zone dangereuse (RGPD - droit à l'oubli)
+         Affichée uniquement pour les comptes non-admin
+    =============================================================== -->
+    <?php if ($membre['statut'] !== 'admin'): ?>
+        <div class="bg-white rounded-xl border-2 border-red-200 p-6 md:p-8 mt-6">
+            <h2 class="text-lg font-semibold text-red-700 mb-3 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+                </svg>
+                Zone sensible
+            </h2>
+            <p class="text-sm text-gray-700 mb-4">
+                Si vous souhaitez exercer votre droit à l'oubli (RGPD),
+                vous pouvez supprimer votre compte. Vos données personnelles
+                seront anonymisées et vous ne pourrez plus vous reconnecter.
+            </p>
+            <a href="<?= url('/compte_supprimer.php') ?>"
+               class="inline-block px-4 py-2 bg-red-50 text-red-700 text-sm font-semibold rounded-md hover:bg-red-100 transition border border-red-200">
+                Supprimer mon compte
+            </a>
+        </div>
+    <?php endif; ?>
+
 </div>
 
 <?php require_once INCLUDES_PATH . '/footer.php'; ?>
