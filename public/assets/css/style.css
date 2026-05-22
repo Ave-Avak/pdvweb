@@ -1,0 +1,51 @@
+/* =====================================================================
+   public/assets/css/style.css
+   ---------------------------------------------------------------------
+   Compléments CSS au-dessus de Tailwind.
+   La majorité du style passe par les classes Tailwind dans le HTML —
+   ce fichier ne contient que les ajustements globaux.
+   ===================================================================== */
+
+/* Lissage des polices */
+html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scroll smooth pour les ancres internes */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Améliorer la lisibilité des champs de formulaire au focus */
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+}
+
+/* Animation discrète sur les transitions */
+* {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Style propre pour les barres de défilement (WebKit / Chrome / Edge) */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Lien sans soulignement par défaut (Tailwind le fait déjà mais pour les liens hors classes) */
+a {
+    text-decoration: none;
+}

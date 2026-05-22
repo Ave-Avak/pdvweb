@@ -1,0 +1,55 @@
+# =====================================================================
+# .gitignore - PDVWeb
+# =====================================================================
+
+# Fichiers de configuration sensibles
+config/config.local.php
+config/secrets.php
+.env
+.env.*
+!.env.example
+
+# Uploads utilisateurs (avatars, etc.)
+public/uploads/avatars/*
+!public/uploads/avatars/.gitkeep
+public/uploads/temp/*
+
+# Logs
+*.log
+logs/
+storage/logs/
+
+# Cache
+cache/
+storage/cache/
+*.cache
+
+# Dépendances (au cas où on rajoute Composer plus tard)
+vendor/
+composer.lock
+
+# IDE & éditeurs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Système d'exploitation
+desktop.ini
+$RECYCLE.BIN/
+
+# Fichiers temporaires PHP
+*.tmp
+*.bak
+*.orig
+
+# Données et exports
+*.sql.bak
+exports/
+dumps/
+
+# Captures de test perso (qui ne vont pas dans docs/captures/)
+test_screenshots/

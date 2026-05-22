@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+    <rect width="400" height="400" fill="#f3f4f6"/>
+    <g transform="translate(125 125)" fill="none" stroke="#9ca3af" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 16 v 118 a4 4 0 0 0 4 4 h 134 a4 4 0 0 0 4 -4 v-118"/>
+        <path d="M70 6 h10 a 4 4 0 0 1 4 4 v6 h-18 v -6 a4 4 0 0 1 4 -4 z"/>
+        <path d="M30 60 h90 m-90 25 h90 m-90 25 h60"/>
+    </g>
+    <text x="200" y="320" font-family="system-ui, sans-serif" font-size="18" fill="#6b7280" text-anchor="middle">Image à venir</text>
+</svg>

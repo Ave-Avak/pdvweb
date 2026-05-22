@@ -1,0 +1,20 @@
+# =====================================================================
+# .htaccess RACINE DU PROJET
+# Empêche l'accès direct aux dossiers internes (config, classes,
+# includes, views, sql, docs) depuis le navigateur.
+# Seul /public/ doit être accessible.
+# =====================================================================
+
+# Désactiver complètement le listage des dossiers
+Options -Indexes
+
+# Refuser toute requête sur ce dossier (et ses sous-dossiers)
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+
+# Apache 2.2 et versions antérieures
+<IfModule !mod_authz_core.c>
+    Order deny,allow
+    Deny from all
+</IfModule>

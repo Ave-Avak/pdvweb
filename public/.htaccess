@@ -1,0 +1,58 @@
+# =====================================================================
+# .htaccess  -  /public/
+# Configuration du dossier accessible depuis le navigateur.
+# =====================================================================
+
+# Désactiver le listage des dossiers
+Options -Indexes
+
+# UTF-8 par défaut
+AddDefaultCharset UTF-8
+
+# Permettre tous les accès (annule le Deny global du .htaccess racine
+# pour ce dossier-ci uniquement, qui est notre point d'entrée web)
+<IfModule mod_authz_core.c>
+    Require all granted
+</IfModule>
+
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Allow from all
+</IfModule>
+
+# ---------------------------------------------------------------------
+# Page d'accueil par défaut
+# ---------------------------------------------------------------------
+DirectoryIndex index.php index.html
+
+
+# ---------------------------------------------------------------------
+# Sécurité - en-têtes HTTP
+# ---------------------------------------------------------------------
+<IfModule mod_headers.c>
+    # Empêcher le sniffing MIME (anti XSS)
+    Header set X-Content-Type-Options "nosniff"
+
+    # Bloquer l'affichage du site dans un <iframe> tiers (anti-clickjacking)
+    Header set X-Frame-Options "SAMEORIGIN"
+
+    # Politique de référent : ne pas envoyer l'URL en clair vers les sites externes
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+
+# ---------------------------------------------------------------------
+# Empêcher l'exécution PHP dans le dossier uploads/
+# (au cas où un attaquant uploadait un fichier .php déguisé)
+# ---------------------------------------------------------------------
+<Directory "uploads">
+    <FilesMatch "\.(php|phtml|php3|php4|php5|phar|pl|py|jsp|asp|sh|cgi)$">
+        <IfModule mod_authz_core.c>
+            Require all denied
+        </IfModule>
+        <IfModule !mod_authz_core.c>
+            Order deny,allow
+            Deny from all
+        </IfModule>
+    </FilesMatch>
+</Directory>
