@@ -16,11 +16,14 @@ class NoteArticle
 {
     /**
      * Récupère la note d'un membre sur un article (s'il en a déjà laissée une).
+     * Aliase avis -> commentaire pour cohérence avec le reste du code.
      */
     public static function noteDuMembre(int $idMembre, int $idArticle): ?array
     {
         $req = Db::pdo()->prepare(
-            "SELECT * FROM note_article WHERE id_membre = ? AND id_article = ?"
+            "SELECT id_membre, id_article, note,
+                    avis AS commentaire, date_note
+             FROM note_article WHERE id_membre = ? AND id_article = ?"
         );
         $req->execute([$idMembre, $idArticle]);
         $row = $req->fetch();
@@ -33,7 +36,8 @@ class NoteArticle
     public static function listerParArticle(int $idArticle): array
     {
         $req = Db::pdo()->prepare(
-            "SELECT n.*,
+            "SELECT n.id_membre, n.id_article, n.note,
+                    n.avis AS commentaire, n.date_note,
                     m.prenom, m.nom, m.avatar, m.date_anonymisation
              FROM note_article n
              INNER JOIN membre m ON m.id_membre = n.id_membre
@@ -65,6 +69,8 @@ class NoteArticle
 
     /**
      * Crée ou met à jour la note d'un membre.
+     * Note : le paramètre s'appelle "commentaire" pour la lisibilité du code,
+     * mais il est stocké dans la colonne "avis" (cf. schéma SQL initial).
      */
     public static function enregistrer(int $idMembre, int $idArticle, int $note, ?string $commentaire = null): bool
     {
@@ -76,14 +82,14 @@ class NoteArticle
 
         if ($existant) {
             $req = Db::pdo()->prepare(
-                "UPDATE note_article SET note = ?, commentaire = ?, date_note = NOW()
+                "UPDATE note_article SET note = ?, avis = ?, date_note = NOW()
                  WHERE id_membre = ? AND id_article = ?"
             );
             return $req->execute([$note, $commentaire, $idMembre, $idArticle]);
         }
 
         $req = Db::pdo()->prepare(
-            "INSERT INTO note_article (id_membre, id_article, note, commentaire)
+            "INSERT INTO note_article (id_membre, id_article, note, avis)
              VALUES (?, ?, ?, ?)"
         );
         return $req->execute([$idMembre, $idArticle, $note, $commentaire]);

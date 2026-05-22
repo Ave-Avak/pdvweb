@@ -77,6 +77,111 @@ class Membre
     }
 
 
+    /**
+     * Liste paginée avec filtres pour l'administration.
+     *
+     * @param array $opts
+     *   - 'recherche'  ?string : LIKE sur login, email, nom, prenom
+     *   - 'statut'     ?string : 'membre' | 'admin'
+     *   - 'filtre'     ?string : 'tous' | 'bloques' | 'anonymises' | 'actifs'
+     *   - 'page'       int
+     *   - 'parPage'    int
+     */
+    public static function listerAvecFiltres(array $opts = []): array
+    {
+        $page    = max(1, (int)($opts['page']    ?? 1));
+        $parPage = max(1, (int)($opts['parPage'] ?? 25));
+        $offset  = ($page - 1) * $parPage;
+
+        $where  = [];
+        $params = [];
+
+        if (!empty($opts['recherche'])) {
+            $where[]  = "(m.login LIKE ? OR m.email LIKE ? OR m.nom LIKE ? OR m.prenom LIKE ?)";
+            $like = '%' . $opts['recherche'] . '%';
+            $params[] = $like;
+            $params[] = $like;
+            $params[] = $like;
+            $params[] = $like;
+        }
+
+        if (!empty($opts['statut']) && in_array($opts['statut'], ['membre', 'admin'], true)) {
+            $where[]  = "m.statut = ?";
+            $params[] = $opts['statut'];
+        }
+
+        // Filtre composé
+        $filtre = $opts['filtre'] ?? 'tous';
+        switch ($filtre) {
+            case 'bloques':
+                $where[] = "m.indesirable = 1 AND m.date_anonymisation IS NULL";
+                break;
+            case 'anonymises':
+                $where[] = "m.date_anonymisation IS NOT NULL";
+                break;
+            case 'actifs':
+                $where[] = "m.indesirable = 0 AND m.date_anonymisation IS NULL";
+                break;
+            // 'tous' : pas de filtre
+        }
+
+        $clauseWhere = $where ? ' WHERE ' . implode(' AND ', $where) : '';
+
+        // Total
+        $reqTotal = Db::pdo()->prepare("SELECT COUNT(*) FROM membre m" . $clauseWhere);
+        $reqTotal->execute($params);
+        $total = (int)$reqTotal->fetchColumn();
+
+        // Données + nb connexions sur 30j
+        $sql = "SELECT m.*,
+                       (SELECT COUNT(*) FROM log_connexion
+                        WHERE id_membre = m.id_membre
+                          AND date_log >= DATE_SUB(NOW(), INTERVAL 30 DAY)) AS nb_connexions_30j,
+                       (SELECT COUNT(*) FROM achat_facture WHERE id_membre = m.id_membre) AS nb_commandes
+                FROM membre m
+                $clauseWhere
+                ORDER BY m.date_inscription DESC
+                LIMIT $parPage OFFSET $offset";
+
+        $req = Db::pdo()->prepare($sql);
+        $req->execute($params);
+        $membres = $req->fetchAll();
+
+        return [
+            'membres'    => $membres,
+            'total'      => $total,
+            'totalPages' => (int)ceil($total / $parPage),
+            'page'       => $page,
+        ];
+    }
+
+
+    /**
+     * Change le rôle d'un membre (membre <-> admin).
+     * Trace l'action dans audit_log.
+     */
+    public static function changerRole(int $idMembre, string $nouveauStatut, int $idAdmin): bool
+    {
+        if (!in_array($nouveauStatut, ['membre', 'admin'], true)) {
+            return false;
+        }
+        $req = Db::pdo()->prepare("UPDATE membre SET statut = ? WHERE id_membre = ?");
+        $ok = $req->execute([$nouveauStatut, $idMembre]);
+
+        if ($ok && class_exists('AuditLog')) {
+            AuditLog::enregistrer(
+                'membre.role_change',
+                $idAdmin,
+                'membre',
+                $idMembre,
+                ['nouveau_statut' => $nouveauStatut]
+            );
+        }
+
+        return $ok;
+    }
+
+
     // =================================================================
     // CRÉATION (INSCRIPTION)
     // =================================================================
