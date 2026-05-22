@@ -3,9 +3,61 @@
 ## [Non publié]
 
 ### À venir
-- Étape 5 : blog et commentaires
 - Étape 6 : panier et commandes
-- Étape 7 : interface d'administration
+- Étape 7 : interface d'administration complète
+
+---
+
+## [0.5.0] — Étape 5 : Blog & News
+
+### Ajouté
+- **`classes/util/Markdown.php`** : parser Markdown maison, ~180 lignes
+  - Conversion : gras, italique, code, liens, listes, citations, paragraphes
+  - Sécurité : échappement HTML préalable + filtrage URL (bloque `javascript:` et `data:`)
+- **4 nouveaux modèles métier** :
+  - `Billet.php` : CRUD billets + recherche, tri (récents/likes/commentaires), pagination, transaction sur tags
+  - `Commentaire.php` : CRUD commentaires + commentaires d'un membre
+  - `Tag.php` : gestion des étiquettes
+  - `LikeContenu.php` : likes polymorphes (billet/commentaire/article) avec whitelist de types
+- **9 contrôleurs publics et admin** :
+  - `public/blog.php` : liste + recherche + filtre par tag + tri + pagination + log de recherche
+  - `public/billet.php` : détail billet + commentaires + likes
+  - `public/commentaire_post.php` / `_edit.php` / `_delete.php` : CRUD commentaires
+  - `public/like_toggle.php` : ajout/retrait de like
+  - `public/admin/billets.php` : tableau de gestion admin
+  - `public/admin/billet_form.php` : création/édition de billet
+  - `public/admin/billet_supprimer.php` : suppression
+  - `public/admin/index.php` : tableau de bord admin provisoire
+- **6 vues** :
+  - `views/blog/liste.php` : liste paginée avec filtres et tri
+  - `views/blog/detail.php` : billet + commentaires inline + édition/suppression au survol
+  - `views/admin/billets.php` : tableau de gestion
+  - `views/admin/billet_form.php` : éditeur Markdown avec barre d'outils et aperçu
+  - `views/admin/index.php` : tableau de bord avec stats globales
+
+### Fonctionnalités
+- **Recherche** par titre avec log dans `recherche_log`
+- **Filtres** par tag (clic sur un tag = filtre)
+- **Tri** : plus récents / plus likés / plus commentés
+- **Pagination** : 10 billets par page
+- **Likes** polymorphes : un seul système, 3 cibles possibles
+- **Édition de commentaire** : textarea inline qui se déplie au clic
+- **Modération** : l'admin peut éditer/supprimer n'importe quel commentaire/billet
+- **Éditeur Markdown** : 7 boutons (gras, italique, code, lien, listes, citation) + raccourcis Ctrl+B/I + aperçu en direct
+
+### Sécurité
+- CSRF sur tous les formulaires
+- Validation des types dans `LikeContenu` (whitelist)
+- Vérification d'autorisation avant toute édition/suppression
+- Transactions BDD lors de la création/modification de billets (pour les tags)
+- Markdown : échappement HTML systématique avant traitement
+- URLs `javascript:` et `data:` bloquées dans les liens Markdown
+- Membres bloqués ne peuvent pas commenter
+
+### Testé
+- 47 fichiers PHP : syntaxe validée (PHP 8.3)
+- 5 nouvelles classes : autoload + méthodes publiques OK
+- Sécurité Markdown : XSS bloqué, URL `javascript:` bloquée, transformations correctes
 
 ---
 

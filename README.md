@@ -190,7 +190,7 @@ php sql/generer_hashes.php
 - [x] **Étape 2.** Socle commun : config, classes utilitaires, header/footer Tailwind
 - [x] **Étape 3.** Accueil + inscription + connexion + déconnexion + profil
 - [x] **Étape 4.** Mini-chat
-- [ ] **Étape 5.** Blog/News (billets, commentaires, recherche, tags, likes)
+- [x] **Étape 5.** Blog/News (billets, commentaires, recherche, tags, likes)
 - [ ] **Étape 6.** Achats (catalogue, panier, commande, paiement, codes promo, historique)
 - [ ] **Étape 7.** Administration (tableau de bord, gestion membres, articles, statistiques)
 - [ ] **Étape 8.** Sécurité finale : CSRF, audit log, anti brute-force
