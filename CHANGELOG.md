@@ -3,10 +3,52 @@
 ## [Non publié]
 
 ### À venir
-- Étape 4 : mini-chat
 - Étape 5 : blog et commentaires
 - Étape 6 : panier et commandes
 - Étape 7 : interface d'administration
+
+---
+
+## [0.4.0] — Étape 4 : Mini-chat
+
+### Ajouté
+- **`classes/Minichat.php`** : modèle métier
+  - `listerDerniers(int)` : récupère les N derniers messages avec jointure membre
+  - `creer(int, string)` : crée un message
+  - `supprimer(int)` : supprime un message
+  - `trouverParId(int)` : recherche par ID (pour vérif des droits avant suppression)
+  - `dernierMessageDe(int)` : pour l'anti-spam
+  - `longueurMax()` / `nbAffiches()` : lecture des paramètres applicatifs
+- **`public/minichat.php`** : contrôleur d'affichage + envoi
+  - Réservé aux UM (`Auth::requireLogin()`)
+  - Membres bloqués ne peuvent pas poster
+  - Anti-spam : refuse 2 messages identiques d'affilée
+  - Pattern POST-Redirect-GET après envoi
+- **`public/minichat_supprimer.php`** : contrôleur de suppression
+  - Méthode POST uniquement (jamais GET)
+  - CSRF obligatoire
+  - Droits : auteur du message OU admin
+- **`views/minichat.php`** : interface complète
+  - 10 derniers messages dans une zone scrollable
+  - Avatar + nom + badge "Admin" + date relative
+  - Compteur de caractères en direct (passe en orange à 90%)
+  - Auto-scroll au dernier message
+  - Bouton suppression visible au survol (icône poubelle)
+  - État vide géré (illustration + message d'invitation)
+
+### Sécurité
+- CSRF sur l'envoi et la suppression
+- Suppression : vérification des droits avant exécution
+- Anti-spam basique (refus du doublon consécutif)
+- `nl2br(h(...))` pour autoriser les retours à la ligne sans risquer le XSS
+- Limite côté serveur ET côté client (HTML maxlength + check PHP)
+- Les UM bloqués ne peuvent plus poster
+
+### UX
+- Affichage chronologique (ancien → récent) avec auto-scroll en bas
+- Compteur de caractères en temps réel
+- Indication visuelle du contenu admin (badge violet)
+- Boutons de suppression visibles uniquement au survol (UI propre)
 
 ---
 
