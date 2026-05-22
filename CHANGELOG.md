@@ -3,11 +3,54 @@
 ## [Non publié]
 
 ### À venir
-- Étape 3 : authentification (inscription, connexion, déconnexion, profil)
 - Étape 4 : mini-chat
 - Étape 5 : blog et commentaires
 - Étape 6 : panier et commandes
 - Étape 7 : interface d'administration
+
+---
+
+## [0.3.0] — Étape 3 : Authentification complète
+
+### Ajouté
+- **`classes/Membre.php`** : première classe métier du projet
+  - Recherche : `trouverParId`, `trouverParLogin`, `trouverParEmail`, `listerTous`
+  - Création : `loginExiste`, `emailExiste`, `creer` (avec hash bcrypt + rôle par défaut)
+  - Connexion : `tenterConnexion` (anti brute-force intégré)
+  - Mise à jour : `mettreAJour`, `changerMotPasse`, `mettreAJourAvatar`, `verifierMotPasse`
+  - Administration : `bloquer`, `nbConnexions`
+  - Audit log automatique sur les actions sensibles
+- **Inscription** : `public/inscription.php` + `views/auth/inscription.php`
+  - Validation côté serveur (longueur, format email, force du mdp)
+  - Vérification unicité login + email
+  - Upload d'avatar optionnel (aperçu JS avant validation)
+  - Connexion automatique après inscription
+- **Connexion** : `public/login.php` + `views/auth/login.php`
+  - Anti brute-force (5 essais / 15 min)
+  - Comptes de test affichés en mode dev
+  - Redirection vers la page demandée avant login
+- **Déconnexion** : `public/logout.php`
+- **Profil** : `public/profil.php` + `views/auth/profil.php`
+  - 3 formulaires distincts (infos, mot de passe, avatar)
+  - Upload + suppression d'avatar
+  - Carte récap des infos de compte (inscription, dernière connexion, statut)
+
+### Sécurité
+- CSRF sur tous les formulaires (5 formulaires au total : inscription, login, profil×3)
+- `password_hash` / `password_verify` (bcrypt)
+- `session_regenerate_id(true)` après login
+- Upload sécurisé : extensions + MIME réel + image valide + renommage aléatoire
+- Anti brute-force avec blocage temporaire
+- Audit log automatique des inscriptions et connexions
+- Validation REGEX du login (`[a-zA-Z0-9_-]{3,50}`)
+- Vérification du mot de passe actuel avant tout changement
+- Rollback du fichier uploadé en cas d'erreur BDD
+
+### Testé
+- 23 fichiers PHP : syntaxe validée
+- Classe Membre : 5 méthodes statiques testées
+- Pages inscription/login : rendu HTML complet (15k + 10k octets)
+- Redirection automatique du profil pour les UNM
 
 ---
 

@@ -188,7 +188,7 @@ php sql/generer_hashes.php
 
 - [x] **Étape 1.** Architecture, schéma BDD (34 tables), données de test, README
 - [x] **Étape 2.** Socle commun : config, classes utilitaires, header/footer Tailwind
-- [ ] **Étape 3.** Accueil + inscription + connexion + déconnexion + profil
+- [x] **Étape 3.** Accueil + inscription + connexion + déconnexion + profil
 - [ ] **Étape 4.** Mini-chat
 - [ ] **Étape 5.** Blog/News (billets, commentaires, recherche, tags, likes)
 - [ ] **Étape 6.** Achats (catalogue, panier, commande, paiement, codes promo, historique)

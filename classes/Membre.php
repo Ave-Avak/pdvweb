@@ -1,0 +1,369 @@
+<?php
+/**
+ * classes/Membre.php
+ * ---------------------------------------------------------------------
+ * Modèle "Membre" : encapsule toute la logique métier liée aux comptes
+ * utilisateurs (UM et Admin).
+ *
+ * C'est la première classe MÉTIER du projet (les autres - Db, Auth,
+ * Csrf, etc. - sont des classes UTILITAIRES).
+ *
+ * Toutes les méthodes sont statiques : on n'instancie jamais Membre,
+ * on appelle directement Membre::trouverParLogin('jdupont').
+ *
+ * Cette approche garde le code procédural-friendly tout en bénéficiant
+ * de l'organisation POO.
+ * ---------------------------------------------------------------------
+ */
+
+class Membre
+{
+    // =================================================================
+    // RECHERCHE
+    // =================================================================
+
+    /**
+     * Trouve un membre par son ID.
+     *
+     * @param int $id
+     * @return array|null Données du membre, ou null si introuvable
+     */
+    public static function trouverParId(int $id): ?array
+    {
+        $req = Db::pdo()->prepare("SELECT * FROM membre WHERE id_membre = ?");
+        $req->execute([$id]);
+        $membre = $req->fetch();
+        return $membre ?: null;
+    }
+
+    /**
+     * Trouve un membre par son login.
+     *
+     * @param string $login
+     * @return array|null
+     */
+    public static function trouverParLogin(string $login): ?array
+    {
+        $req = Db::pdo()->prepare("SELECT * FROM membre WHERE login = ?");
+        $req->execute([$login]);
+        $membre = $req->fetch();
+        return $membre ?: null;
+    }
+
+    /**
+     * Trouve un membre par son email.
+     *
+     * @param string $email
+     * @return array|null
+     */
+    public static function trouverParEmail(string $email): ?array
+    {
+        $req = Db::pdo()->prepare("SELECT * FROM membre WHERE email = ?");
+        $req->execute([$email]);
+        $membre = $req->fetch();
+        return $membre ?: null;
+    }
+
+    /**
+     * Liste tous les membres (pour l'admin).
+     *
+     * @return array
+     */
+    public static function listerTous(): array
+    {
+        return Db::pdo()->query(
+            "SELECT * FROM membre ORDER BY date_inscription DESC"
+        )->fetchAll();
+    }
+
+
+    // =================================================================
+    // CRÉATION (INSCRIPTION)
+    // =================================================================
+
+    /**
+     * Vérifie si un login est déjà pris.
+     */
+    public static function loginExiste(string $login): bool
+    {
+        $req = Db::pdo()->prepare("SELECT COUNT(*) FROM membre WHERE login = ?");
+        $req->execute([$login]);
+        return $req->fetchColumn() > 0;
+    }
+
+    /**
+     * Vérifie si un email est déjà utilisé.
+     */
+    public static function emailExiste(string $email): bool
+    {
+        $req = Db::pdo()->prepare("SELECT COUNT(*) FROM membre WHERE email = ?");
+        $req->execute([$email]);
+        return $req->fetchColumn() > 0;
+    }
+
+    /**
+     * Crée un nouveau membre.
+     *
+     * @param array $donnees Tableau associatif avec : nom, prenom, date_naissance,
+     *                       email, login, mot_passe (en clair), avatar (optionnel)
+     * @return int ID du nouveau membre créé
+     */
+    public static function creer(array $donnees): int
+    {
+        $pdo = Db::pdo();
+
+        $req = $pdo->prepare(
+            "INSERT INTO membre
+                (nom, prenom, date_naissance, email, login, mot_passe, avatar, statut)
+             VALUES
+                (?, ?, ?, ?, ?, ?, ?, 'membre')"
+        );
+
+        $req->execute([
+            $donnees['nom'],
+            $donnees['prenom'],
+            $donnees['date_naissance'],
+            $donnees['email'],
+            $donnees['login'],
+            password_hash($donnees['mot_passe'], PASSWORD_DEFAULT),
+            $donnees['avatar'] ?? null,
+        ]);
+
+        $idMembre = (int)$pdo->lastInsertId();
+
+        // Attribuer le rôle "membre" par défaut (id_role = 3 dans le seed)
+        $reqRole = $pdo->prepare(
+            "INSERT INTO membre_role (id_membre, id_role)
+             VALUES (?, (SELECT id_role FROM role WHERE code = 'membre'))"
+        );
+        $reqRole->execute([$idMembre]);
+
+        // Audit log : trace de l'inscription
+        self::ajouterAudit($idMembre, 'membre.inscription', 'membre', $idMembre,
+            ['login' => $donnees['login']]);
+
+        return $idMembre;
+    }
+
+
+    // =================================================================
+    // CONNEXION
+    // =================================================================
+
+    /**
+     * Tente la connexion d'un utilisateur.
+     *
+     * @param string $login
+     * @param string $motPasse
+     * @return array ['succes' => bool, 'membre' => array|null, 'erreur' => string|null]
+     */
+    public static function tenterConnexion(string $login, string $motPasse): array
+    {
+        // 1. Anti brute-force : ce login est-il bloqué temporairement ?
+        if (Securite::estBloque($login)) {
+            $minutes = Securite::minutesAvantDeblocage($login);
+            return [
+                'succes' => false,
+                'membre' => null,
+                'erreur' => "Trop de tentatives ratées. Réessayez dans environ $minutes minute(s).",
+            ];
+        }
+
+        // 2. Récupération du membre
+        $membre = self::trouverParLogin($login);
+
+        // 3. Vérifications combinées (membre inexistant OU mot de passe incorrect)
+        //    Pour ne pas révéler à un attaquant si le login existe ou non,
+        //    on retourne le même message dans les deux cas.
+        if (!$membre || !password_verify($motPasse, $membre['mot_passe'])) {
+            Securite::enregistrerTentative($login, false);
+            return [
+                'succes' => false,
+                'membre' => null,
+                'erreur' => 'Login ou mot de passe incorrect.',
+            ];
+        }
+
+        // 4. Le compte est-il bloqué par l'admin ?
+        if ((int)$membre['indesirable'] === 1) {
+            Securite::enregistrerTentative($login, false);
+            return [
+                'succes' => false,
+                'membre' => null,
+                'erreur' => 'Votre compte a été suspendu. Contactez l\'administrateur.',
+            ];
+        }
+
+        // 5. Tout est OK → connexion réussie
+        Securite::enregistrerTentative($login, true);
+
+        // 6. Audit
+        self::ajouterAudit((int)$membre['id_membre'], 'membre.connexion', 'membre',
+            (int)$membre['id_membre'], ['ip' => Securite::ip()]);
+
+        return [
+            'succes' => true,
+            'membre' => $membre,
+            'erreur' => null,
+        ];
+    }
+
+
+    // =================================================================
+    // MISE À JOUR (PROFIL)
+    // =================================================================
+
+    /**
+     * Met à jour les informations de profil d'un membre.
+     *
+     * @param int   $idMembre
+     * @param array $donnees  Champs autorisés : nom, prenom, date_naissance, email
+     * @return bool
+     */
+    public static function mettreAJour(int $idMembre, array $donnees): bool
+    {
+        $req = Db::pdo()->prepare(
+            "UPDATE membre
+             SET nom = ?, prenom = ?, date_naissance = ?, email = ?
+             WHERE id_membre = ?"
+        );
+
+        $resultat = $req->execute([
+            $donnees['nom'],
+            $donnees['prenom'],
+            $donnees['date_naissance'],
+            $donnees['email'],
+            $idMembre,
+        ]);
+
+        if ($resultat) {
+            self::ajouterAudit($idMembre, 'membre.modifier', 'membre', $idMembre,
+                ['champs' => array_keys($donnees)]);
+        }
+
+        return $resultat;
+    }
+
+    /**
+     * Change le mot de passe d'un membre.
+     *
+     * @param int    $idMembre
+     * @param string $nouveauMotPasse
+     * @return bool
+     */
+    public static function changerMotPasse(int $idMembre, string $nouveauMotPasse): bool
+    {
+        $req = Db::pdo()->prepare(
+            "UPDATE membre SET mot_passe = ? WHERE id_membre = ?"
+        );
+
+        $resultat = $req->execute([
+            password_hash($nouveauMotPasse, PASSWORD_DEFAULT),
+            $idMembre,
+        ]);
+
+        if ($resultat) {
+            self::ajouterAudit($idMembre, 'membre.changer_mdp', 'membre', $idMembre);
+        }
+
+        return $resultat;
+    }
+
+    /**
+     * Met à jour l'avatar d'un membre.
+     */
+    public static function mettreAJourAvatar(int $idMembre, ?string $nomFichier): bool
+    {
+        $req = Db::pdo()->prepare("UPDATE membre SET avatar = ? WHERE id_membre = ?");
+        return $req->execute([$nomFichier, $idMembre]);
+    }
+
+    /**
+     * Vérifie le mot de passe d'un membre (pour confirmer une action sensible).
+     */
+    public static function verifierMotPasse(int $idMembre, string $motPasse): bool
+    {
+        $membre = self::trouverParId($idMembre);
+        if (!$membre) return false;
+        return password_verify($motPasse, $membre['mot_passe']);
+    }
+
+
+    // =================================================================
+    // ADMINISTRATION
+    // =================================================================
+
+    /**
+     * Bloque ou débloque un membre (modification du flag "indesirable").
+     */
+    public static function bloquer(int $idMembre, bool $bloque): bool
+    {
+        $req = Db::pdo()->prepare("UPDATE membre SET indesirable = ? WHERE id_membre = ?");
+        $resultat = $req->execute([$bloque ? 1 : 0, $idMembre]);
+
+        if ($resultat) {
+            self::ajouterAudit(
+                Auth::id(),
+                $bloque ? 'membre.bloquer' : 'membre.debloquer',
+                'membre',
+                $idMembre
+            );
+        }
+        return $resultat;
+    }
+
+    /**
+     * Compte le nombre de connexions d'un membre sur N jours glissants.
+     *
+     * @param int $idMembre
+     * @param int $nbJours  Ex: 1 (aujourd'hui), 7 (semaine)
+     * @return int
+     */
+    public static function nbConnexions(int $idMembre, int $nbJours = 1): int
+    {
+        $req = Db::pdo()->prepare(
+            "SELECT COUNT(*) FROM log_connexion
+             WHERE id_membre = ?
+               AND date_log > NOW() - INTERVAL ? DAY"
+        );
+        $req->execute([$idMembre, $nbJours]);
+        return (int)$req->fetchColumn();
+    }
+
+
+    // =================================================================
+    // UTILITAIRES PRIVÉS
+    // =================================================================
+
+    /**
+     * Ajoute une entrée à l'audit log.
+     * Méthode privée utilisée en interne par les autres méthodes.
+     */
+    private static function ajouterAudit(
+        ?int $idMembre,
+        string $action,
+        ?string $entite = null,
+        ?int $idEntite = null,
+        ?array $details = null
+    ): void
+    {
+        try {
+            $req = Db::pdo()->prepare(
+                "INSERT INTO audit_log
+                    (id_membre, action, entite, id_entite, details, ip, user_agent)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)"
+            );
+            $req->execute([
+                $idMembre,
+                $action,
+                $entite,
+                $idEntite,
+                $details ? json_encode($details, JSON_UNESCAPED_UNICODE) : null,
+                Securite::ip(),
+                Securite::userAgent(),
+            ]);
+        } catch (Throwable $e) {
+            // L'audit log est best-effort : si ça échoue, on continue normalement.
+        }
+    }
+}
