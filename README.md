@@ -191,7 +191,7 @@ php sql/generer_hashes.php
 - [x] **Étape 3.** Accueil + inscription + connexion + déconnexion + profil
 - [x] **Étape 4.** Mini-chat
 - [x] **Étape 5.** Blog/News (billets, commentaires, recherche, tags, likes)
-- [ ] **Étape 6.** Achats (catalogue, panier, commande, paiement, codes promo, historique)
+- [x] **Étape 6.** Achats (catalogue, panier, commande, paiement, codes promo, historique)
 - [ ] **Étape 7.** Administration (tableau de bord, gestion membres, articles, statistiques)
 - [ ] **Étape 8.** Sécurité finale : CSRF, audit log, anti brute-force
 - [ ] **Étape 9.** Documentation finale + captures + manuel utilisateur

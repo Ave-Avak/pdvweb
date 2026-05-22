@@ -92,10 +92,21 @@ function asset_avatar(?string $nomFichier): string
  */
 function asset_article(?string $nomFichier): string
 {
+    // Pas de fichier renseigné → image par défaut
     if (empty($nomFichier)) {
         return asset('assets/img/article-defaut.svg');
     }
-    return asset('assets/img/articles/' . $nomFichier);
+
+    // Sécurité : empêche les chemins traversaux (../, ..\)
+    $nomFichier = basename($nomFichier);
+
+    // Vérifie que le fichier existe vraiment sur disque, sinon défaut
+    $cheminAbsolu = PUBLIC_PATH . '/uploads/articles/' . $nomFichier;
+    if (!is_file($cheminAbsolu)) {
+        return asset('assets/img/article-defaut.svg');
+    }
+
+    return asset('uploads/articles/' . $nomFichier);
 }
 
 
