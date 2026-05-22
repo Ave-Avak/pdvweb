@@ -385,10 +385,12 @@ class Membre
             $hashAleatoire = password_hash($mdpAleatoire, PASSWORD_DEFAULT);
 
             // 4. UPDATE de toutes les colonnes personnelles
+            // Note : on inverse "Utilisateur" et "supprimé" pour que l'affichage
+            // standard "$prenom $nom" donne bien "Utilisateur supprimé".
             $req = $pdo->prepare(
                 "UPDATE membre SET
-                    nom = 'Utilisateur',
-                    prenom = 'supprimé',
+                    nom = 'supprimé',
+                    prenom = 'Utilisateur',
                     date_naissance = '1900-01-01',
                     email = ?,
                     login = ?,

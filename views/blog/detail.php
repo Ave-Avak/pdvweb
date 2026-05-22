@@ -173,14 +173,16 @@ $idMembre      = Auth::id();
                     <!-- En-tête : avatar + nom + date + actions -->
                     <header class="flex items-center gap-3 mb-3">
                         <img src="<?= h(asset_avatar($c['avatar'])) ?>"
-                             alt="<?= h($c['prenom']) ?>"
+                             alt="<?= h(nom_membre($c)) ?>"
                              class="w-9 h-9 rounded-full object-cover border border-gray-200">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 flex-wrap">
-                                <span class="font-semibold text-gray-900 text-sm">
-                                    <?= h($c['prenom']) ?> <?= h($c['nom']) ?>
+                                <span class="font-semibold text-gray-900 text-sm <?= !empty($c['date_anonymisation']) ? 'italic text-gray-500' : '' ?>">
+                                    <?= h(nom_membre($c)) ?>
                                 </span>
-                                <?php if ($c['statut'] === 'admin'): ?>
+                                <?php if (!empty($c['date_anonymisation'])): ?>
+                                    <span class="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-semibold uppercase">Compte supprimé</span>
+                                <?php elseif ($c['statut'] === 'admin'): ?>
                                     <span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-semibold uppercase">Admin</span>
                                 <?php endif; ?>
                             </div>
