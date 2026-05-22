@@ -1,20 +1,24 @@
 # =====================================================================
 # .htaccess RACINE DU PROJET
-# Empêche l'accès direct aux dossiers internes (config, classes,
-# includes, views, sql, docs) depuis le navigateur.
-# Seul /public/ doit être accessible.
+# ---------------------------------------------------------------------
+# On utilise une approche pragmatique :
+#  - Ce .htaccess racine redirige automatiquement /pdvweb/ vers /pdvweb/public/
+#  - La protection des dossiers sensibles est gérée par un .htaccess
+#    DANS chacun d'eux (classes/, config/, includes/, views/, docs/)
+#  - Cela évite les conflits "deny global + allow spécifique" qui
+#    posent problème sur certaines configurations Apache (XAMPP inclus).
 # =====================================================================
 
-# Désactiver complètement le listage des dossiers
+# Désactiver le listage des dossiers
 Options -Indexes
 
-# Refuser toute requête sur ce dossier (et ses sous-dossiers)
-<IfModule mod_authz_core.c>
-    Require all denied
-</IfModule>
+# Redirection automatique : si on accède à /pdvweb/, on est envoyé vers /pdvweb/public/
+<IfModule mod_rewrite.c>
+    RewriteEngine On
 
-# Apache 2.2 et versions antérieures
-<IfModule !mod_authz_core.c>
-    Order deny,allow
-    Deny from all
+    # Si l'URL ne commence pas déjà par "public/", on y redirige
+    RewriteCond %{REQUEST_URI} !^/pdvweb/public/
+    RewriteCond %{REQUEST_URI} ^/pdvweb/?$
+
+    RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
