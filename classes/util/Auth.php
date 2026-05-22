@@ -119,6 +119,12 @@ class Auth
         $_SESSION['avatar']    = $membre['avatar'] ?? null;
         $_SESSION['statut']    = $membre['statut'];
 
+        // Le cahier des charges précise : "panier persistant jusqu'à la
+        // prochaine connexion". À chaque connexion, on REPART d'un panier vide.
+        // (Si le membre était déjà connecté avec un panier en cours, on
+        // n'efface pas — mais ici on est dans le cadre d'une nouvelle connexion.)
+        unset($_SESSION['panier']);
+
         // Régénération du jeton CSRF après connexion
         Csrf::regenerer();
 
