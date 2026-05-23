@@ -1,246 +1,428 @@
-# 📐 Référence des colonnes de la base de données
+# 📊 Référence du schéma de base de données
 
-Document de référence à consulter avant tout code SQL ou accès à un `$row['colonne']`.
+Document **critique** qui liste **toutes les colonnes** de chaque table, avec leur **vrai nom** tel qu'il existe en BDD.
 
-Ce document existe parce que la nomenclature du schéma initial n'est **pas parfaitement cohérente** (certains noms abrégés, d'autres complets, certaines colonnes "corps" et d'autres "contenu", etc.). On documente donc explicitement les noms réels.
-
----
-
-## Tables principales
-
-### `membre`
-```
-id_membre, nom, prenom, date_naissance, email, email_verifie, login,
-mot_passe, avatar, statut, indesirable, derniere_connexion,
-date_inscription, date_anonymisation
-```
-- `statut` : ENUM('membre', 'admin')
-- `indesirable` : 0/1 (bloqué)
-- `date_anonymisation` : NULL = compte actif, sinon timestamp anonymisation RGPD
-
-### `adresse`
-```
-id_adresse, id_membre, libelle, nom, prenom, rue, numero, complement,
-cp, ville, pays, telephone, type, est_defaut, date_creation
-```
-- `libelle` : nom donné par l'utilisateur (« Domicile », « Bureau »)
-- `type` : ENUM('livraison', 'facturation', 'les_deux')
-
-### `tentative_connexion` ⚠️ Noms abrégés
-```
-id_tentative, login_essaye, ip, user_agent, date_tent, succes
-```
-- `login_essaye` (PAS `login`)
-- `date_tent` (PAS `date_tentative`)
-
-### `log_connexion`
-```
-id_log, id_membre, date_log, ip
-```
-
-### `audit_log`
-```
-id_log, id_membre, action, entite, id_entite, details, ip, user_agent, date_action
-```
-- `details` : JSON
-- `entite` : nom de la table affectée (ex: 'membre', 'article')
-
-### `token`
-```
-id_token, id_membre, type, token_hash, date_creation, date_expiration, date_utilisation
-```
-- `type` : ENUM('reset_password', 'verif_email', 'invitation')
+À consulter avant d'écrire toute requête SQL pour éviter d'inventer des colonnes.
 
 ---
 
-## Catalogue
+## ⚠️ AVERTISSEMENT
 
-### `categorie`
-```
-id_categorie, code, nom, description, ordre
-```
+**Toute requête SQL doit utiliser les noms exacts listés ici.**
 
-### `article`
-```
-id_article, nom, id_categorie, description, prix, image, stock,
-dispo, poids_grammes, date_ajout
-```
-- `dispo` : 0/1 (sert de soft delete)
-
-### `vue_article`
-```
-id_vue, id_article, id_membre, ip, date_vue
-```
-- `id_membre` peut être NULL si visiteur non connecté
-
-### `note_article` ⚠️ Clé composite, pas d'id_note
-```
-(id_membre, id_article) [PK composite], note, avis, date_note
-```
-- **PAS de colonne `id_note`** — clé composite (id_membre, id_article)
-- `avis` (PAS `commentaire`)
+Bugs récurrents évités :
+- `article.actif` ❌ → `article.dispo` ✓
+- `commentaire.contenu` ❌ → `commentaire.corps` ✓
+- `note_article.commentaire` ❌ → `note_article.avis` ✓
+- `tentative_connexion.date_tentative` ❌ → `tentative_connexion.date_tent` ✓
 
 ---
 
-## Commerce
+## Tables principales (par groupe fonctionnel)
 
-### `statut_commande`
-```
-id_statut, code, nom, couleur, ordre
-```
+### 1. Identité & Sécurité
 
-### `achat_facture`
-```
-id_facture, id_membre, id_statut, id_adresse_livraison,
-id_adresse_facturation, reference, sous_total, montant_frais_port,
-mode_livraison, montant_remise, prix_total, date_achat, notes
-```
+#### `membre`
 
-### `ligne_facture`
 ```
-id_ligne, id_facture, id_article, quantite, prix_unitaire
-```
-
-### `paiement`
-```
-id_paiement, id_facture, methode, reference_ext, montant, statut, date_paiement
-```
-
-### `frais_port` ⚠️ "nom" et non "libelle"
-```
-id_frais, nom, pays, montant_min_panier, montant_max_panier,
-prix, delai_jours, actif
-```
-- `nom` (PAS `libelle`) — ex: 'Standard', 'Express'
-
-### `code_promo`
-```
-id_code, code, description, type_remise, valeur, montant_min_panier,
-utilisations_max, utilisations_par_membre, date_debut, date_fin, actif
-```
-- `type_remise` : ENUM('pourcentage', 'montant_fixe', 'livraison_offerte')
-
-### `code_promo_utilisation`
-```
-id_utilisation, id_code, id_membre, id_facture, montant_remise, date_utilisation
+id_membre              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+nom                    VARCHAR(60)  NOT NULL
+prenom                 VARCHAR(60)  NOT NULL
+date_naissance         DATE         NOT NULL
+email                  VARCHAR(150) NOT NULL UNIQUE
+email_verifie          TINYINT(1)   NOT NULL DEFAULT 0
+login                  VARCHAR(50)  NOT NULL UNIQUE
+mot_passe              VARCHAR(255) NOT NULL          -- hash bcrypt
+avatar                 VARCHAR(255) DEFAULT NULL      -- nom fichier .gif/.jpeg
+statut                 ENUM('membre','admin') NOT NULL DEFAULT 'membre'
+indesirable            TINYINT(1)   NOT NULL DEFAULT 0
+derniere_connexion     DATETIME     DEFAULT NULL
+date_inscription       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+date_anonymisation     DATETIME     DEFAULT NULL
 ```
 
-### `favori`
+#### `adresse`
+
 ```
-(id_membre, id_article) [PK composite], date_ajout
+id_adresse        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+id_membre         INT UNSIGNED NOT NULL
+nom_destinataire  VARCHAR(120) NOT NULL
+ligne1            VARCHAR(150) NOT NULL
+ligne2            VARCHAR(150) DEFAULT NULL
+code_postal       VARCHAR(20)  NOT NULL
+ville             VARCHAR(80)  NOT NULL
+pays              VARCHAR(60)  NOT NULL DEFAULT 'Belgique'
+est_defaut        TINYINT(1)   NOT NULL DEFAULT 0
+```
+
+#### `role`, `permission`, `role_permission`, `membre_role`
+
+Tables relationnelles pour le système de rôles.
+
+#### `token`
+
+```
+id_token          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+id_membre         INT UNSIGNED NOT NULL
+type              VARCHAR(40)  NOT NULL    -- 'reset_password', 'verif_email'
+token_hash        VARCHAR(255) NOT NULL    -- SHA-256 du token
+date_creation     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+date_expiration   DATETIME     NOT NULL
+date_utilisation  DATETIME     DEFAULT NULL
+```
+
+#### `tentative_connexion`
+
+```
+id_tentative      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+login_essaye      VARCHAR(100) NOT NULL          -- ⚠ pas "login"
+ip                VARCHAR(45)  NOT NULL
+date_tent         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP  -- ⚠ pas "date_tentative"
+succes            TINYINT(1)   NOT NULL DEFAULT 0
 ```
 
 ---
 
-## Contenu / blog
+### 2. Audit & RGPD
 
-### `billet`
-```
-id_billet, id_membre, titre, corps, date_billet,
-date_suppression, id_membre_suppression
-```
-- `corps` (PAS `contenu`) — texte Markdown
+#### `audit_log`
 
-### `commentaire` ⚠️ "corps" et "id_commentaire" complet
 ```
-id_commentaire, id_billet, id_membre, corps, date_comm,
-date_suppression, id_membre_suppression
-```
-- `id_commentaire` (PAS `id_comm`)
-- `corps` (PAS `contenu`)
-- `date_comm` (abrégé)
-
-### `tag`
-```
-id_tag, code, nom
+id_audit          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+date_action       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+id_acteur         INT UNSIGNED DEFAULT NULL          -- id_membre (null si système)
+action            VARCHAR(80)  NOT NULL              -- 'membre.bloquer', 'article.creer'
+entite            VARCHAR(60)  DEFAULT NULL          -- nom de la table concernée
+id_entite         INT UNSIGNED DEFAULT NULL
+contexte_json     JSON         DEFAULT NULL          -- détails libres
+ip                VARCHAR(45)  DEFAULT NULL
+user_agent        VARCHAR(255) DEFAULT NULL
 ```
 
-### `billet_tag`
-```
-(id_billet, id_tag) [PK composite]
-```
+#### `consentement_rgpd`, `log_connexion`
 
-### `like_contenu`
-```
-(id_membre, type, id_cible) [PK composite], date_like
-```
-- `type` : ENUM('billet', 'commentaire', 'article')
-- `id_cible` : ID de la cible (selon le type)
+Tables RGPD pour conformité.
 
 ---
 
-## Communication
+### 3. Catalogue
 
-### `minichat`
-```
-id_message, id_membre, pseudo, message, date_message
-```
-- `pseudo` (ajouté en migration 07) : pseudo choisi par le membre pour cette session
-- `message` (le contenu)
+#### `categorie`
 
-### `message_prive`
 ```
-id_message, id_expediteur, id_destinataire, sujet, corps, lu, date_envoi
+id_categorie      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+code              VARCHAR(40)  NOT NULL UNIQUE       -- 'informatique', 'livres'
+nom               VARCHAR(80)  NOT NULL
+description       TEXT         DEFAULT NULL
+ordre             INT          NOT NULL DEFAULT 0
+actif             TINYINT(1)   NOT NULL DEFAULT 1    -- migration 09
 ```
-- Messagerie privée entre membres
-- `lu` : 0/1 (côté destinataire)
 
-### `mp_blocage` (ajoutée en migration 06)
-```
-(id_membre, id_membre_bloque) [PK composite], date_blocage
-```
-- Permet à un membre d'en bloquer un autre (blocage unidirectionnel)
-- Un admin peut toujours envoyer un MP même si bloqué (modération)
+#### `article`
 
-### `notification`
 ```
-id_notification, id_membre, type, titre, message, url_cible,
-lue, date_creation, date_lecture
+id_article        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+nom               VARCHAR(150) NOT NULL
+id_categorie      INT UNSIGNED NOT NULL
+description       TEXT         DEFAULT NULL
+prix              DECIMAL(10,2) NOT NULL
+image             VARCHAR(255) DEFAULT NULL
+stock             INT          NOT NULL DEFAULT 0
+dispo             TINYINT(1)   NOT NULL DEFAULT 1    -- ⚠ pas "actif"
+poids_grammes     INT          DEFAULT NULL
+date_ajout        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+```
+
+#### `article_tag` (migration 10)
+
+```
+id_article        INT UNSIGNED NOT NULL
+id_tag            INT UNSIGNED NOT NULL
+PRIMARY KEY (id_article, id_tag)
+FK ON DELETE CASCADE sur les deux
+```
+
+#### `vue_article`
+
+```
+id_vue            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+id_article        INT UNSIGNED NOT NULL
+id_membre         INT UNSIGNED DEFAULT NULL
+date_vue          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+```
+
+#### `note_article`
+
+```
+id_membre         INT UNSIGNED NOT NULL              -- PK composite
+id_article        INT UNSIGNED NOT NULL              -- PK composite
+note              TINYINT UNSIGNED NOT NULL          -- 1 à 5
+avis              TEXT         DEFAULT NULL          -- ⚠ pas "commentaire"
+date_note         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
 ```
 
 ---
 
-## Technique
+### 4. Vente & Paiement
 
-### `parametre`
-```
-cle, valeur, description, date_maj
-```
-- PK : `cle`
+#### `statut_commande`
 
-### `recherche_log`
 ```
-id_recherche, id_membre, terme, nb_resultats, contexte, date_recherche
+id_statut         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+code              VARCHAR(40)  NOT NULL UNIQUE   -- 'en_attente', 'payee'
+nom               VARCHAR(80)  NOT NULL
+couleur           VARCHAR(20)  DEFAULT NULL
+ordre             INT          NOT NULL DEFAULT 0
 ```
-- `contexte` : ENUM('blog', 'catalogue', 'tout')
+
+#### `achat_facture`
+
+```
+id_facture              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+id_membre               INT UNSIGNED NOT NULL
+id_statut               INT UNSIGNED NOT NULL
+id_adresse_livraison    INT UNSIGNED DEFAULT NULL
+id_adresse_facturation  INT UNSIGNED DEFAULT NULL
+reference               VARCHAR(20)  NOT NULL UNIQUE
+sous_total              DECIMAL(10,2) NOT NULL
+montant_frais_port      DECIMAL(8,2)  NOT NULL DEFAULT 0   -- ⚠ pas "frais_port"
+montant_remise          DECIMAL(8,2)  NOT NULL DEFAULT 0   -- ⚠ pas "remise"
+prix_total              DECIMAL(10,2) NOT NULL
+date_achat              DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+notes                   TEXT         DEFAULT NULL
+mode_livraison          VARCHAR(80)  DEFAULT NULL   -- migration 05
+```
+
+#### `ligne_facture`
+
+```
+id_ligne          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+id_facture        INT UNSIGNED NOT NULL
+id_article        INT UNSIGNED NOT NULL
+prix_unitaire     DECIMAL(10,2) NOT NULL    -- snapshot au moment de l'achat
+quantite          INT          NOT NULL
+```
+
+#### `paiement`
+
+```
+id_paiement       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+id_facture        INT UNSIGNED NOT NULL
+montant           DECIMAL(10,2) NOT NULL
+mode              VARCHAR(40)  NOT NULL   -- 'carte', 'virement', 'paypal'
+reference_externe VARCHAR(120) DEFAULT NULL
+date_paiement     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+```
+
+#### `frais_port`
+
+```
+id_frais           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+nom                VARCHAR(80)  NOT NULL
+pays               VARCHAR(60)  NOT NULL
+montant_min_panier DECIMAL(10,2) DEFAULT NULL
+montant_max_panier DECIMAL(10,2) DEFAULT NULL
+prix               DECIMAL(8,2)  NOT NULL
+delai_jours        INT          DEFAULT NULL
+actif              TINYINT(1)   NOT NULL DEFAULT 1
+```
+
+#### `code_promo`
+
+```
+id_code                   INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+code                      VARCHAR(40)  NOT NULL UNIQUE
+description               TEXT         DEFAULT NULL
+type_remise               ENUM('pourcentage','montant_fixe','frais_port') NOT NULL
+valeur                    DECIMAL(8,2) NOT NULL
+montant_min_panier        DECIMAL(10,2) DEFAULT NULL
+utilisations_max          INT          DEFAULT NULL
+utilisations_par_membre   INT          DEFAULT NULL
+date_debut                DATETIME     DEFAULT NULL
+date_fin                  DATETIME     DEFAULT NULL
+actif                     TINYINT(1)   NOT NULL DEFAULT 1
+```
+
+#### `code_promo_utilisation`
+
+```
+id_utilisation    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+id_code           INT UNSIGNED NOT NULL
+id_membre         INT UNSIGNED NOT NULL
+id_facture        INT UNSIGNED NOT NULL
+date_utilisation  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+```
 
 ---
 
-## ⚠️ Tables non utilisées par le code actuel
+### 5. Engagement
 
-Le schéma initial était ambitieux ; certaines tables n'ont jamais été branchées au code et restent dans la BDD comme "amélioration future" :
+#### `favori`
 
-- `role`, `permission`, `role_permission`, `membre_role` — RBAC granulaire (le code utilise juste `membre.statut` ENUM)
-- `consentement_rgpd` — traçage des consentements
-- `newsletter_abonne` — abonnement newsletter
+```
+id_membre   INT UNSIGNED NOT NULL    -- PK composite
+id_article  INT UNSIGNED NOT NULL    -- PK composite
+date_ajout  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+```
 
-**Décision** : on les laisse en place (pas de migration de suppression) car elles sont des points d'évolution naturels. Documenté dans `docs/securite.md`.
+#### `newsletter_abonne`
+
+```
+id_abonne   INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+email       VARCHAR(150) NOT NULL UNIQUE
+id_membre   INT UNSIGNED DEFAULT NULL
+date_inscr  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+desabonne   TINYINT(1)   NOT NULL DEFAULT 0
+```
+
+#### `like_contenu`
+
+```
+id_like      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+id_membre    INT UNSIGNED NOT NULL
+type_contenu VARCHAR(40)  NOT NULL   -- 'billet', 'commentaire'
+id_contenu   INT UNSIGNED NOT NULL
+date_like    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+```
 
 ---
 
-## Conventions de nommage récapitulées
+### 6. Contenu & Blog
 
-| Pattern | Exemple |
+#### `billet`
+
+```
+id_billet              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+id_membre              INT UNSIGNED DEFAULT NULL   -- auteur
+titre                  VARCHAR(200) NOT NULL
+corps                  TEXT         NOT NULL
+date_billet            DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+date_suppression       DATETIME     DEFAULT NULL   -- soft delete
+id_membre_suppression  INT UNSIGNED DEFAULT NULL
+resume                 TEXT         DEFAULT NULL   -- migration 08
+image                  VARCHAR(255) DEFAULT NULL   -- migration 08
+```
+
+#### `commentaire`
+
+```
+id_commentaire    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+id_billet         INT UNSIGNED NOT NULL
+id_membre         INT UNSIGNED DEFAULT NULL
+corps             TEXT         NOT NULL          -- ⚠ pas "contenu"
+date_comm         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP   -- ⚠ pas "date_commentaire"
+date_suppression  DATETIME     DEFAULT NULL
+```
+
+#### `tag`
+
+```
+id_tag    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+code      VARCHAR(40)  NOT NULL UNIQUE
+nom       VARCHAR(60)  NOT NULL
+```
+
+#### `billet_tag`
+
+```
+id_billet  INT UNSIGNED NOT NULL
+id_tag     INT UNSIGNED NOT NULL
+PRIMARY KEY (id_billet, id_tag)
+```
+
+---
+
+### 7. Communication
+
+#### `minichat`
+
+```
+id_message    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+id_membre     INT UNSIGNED NOT NULL
+pseudo        VARCHAR(50)  DEFAULT NULL   -- migration 07
+message       VARCHAR(300) NOT NULL
+date_message  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+```
+
+#### `message_prive` (migration 06)
+
+```
+id_message      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+id_expediteur   INT UNSIGNED NOT NULL
+id_destinataire INT UNSIGNED NOT NULL
+corps           TEXT         NOT NULL
+date_envoi      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+date_lecture    DATETIME     DEFAULT NULL
+```
+
+#### `notification`
+
+```
+id_notification  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+id_membre        INT UNSIGNED NOT NULL
+type             VARCHAR(40)  NOT NULL   -- 'commande.statut', 'mp.recu', etc.
+titre            VARCHAR(150) NOT NULL
+message          TEXT         NOT NULL
+url_cible        VARCHAR(255) DEFAULT NULL
+lue              TINYINT(1)   NOT NULL DEFAULT 0
+date_creation    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+date_lecture     DATETIME     DEFAULT NULL
+```
+
+---
+
+### 8. Système
+
+#### `parametre`
+
+```
+id_parametre   INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+cle            VARCHAR(80)  NOT NULL UNIQUE   -- 'site.nom', 'site.slogan'
+valeur         TEXT         DEFAULT NULL
+description    VARCHAR(255) DEFAULT NULL
+date_modif     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+```
+
+#### `recherche_log`
+
+```
+id_recherche   BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+id_membre      INT UNSIGNED DEFAULT NULL
+terme          VARCHAR(200) NOT NULL
+nb_resultats   INT          NOT NULL DEFAULT 0
+contexte       VARCHAR(40)  NOT NULL   -- 'catalogue', 'blog'
+date_recherche DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+```
+
+---
+
+## Procédure avant d'écrire une requête SQL
+
+1. **Identifier la table** concernée
+2. **Vérifier** les colonnes exactes ci-dessus
+3. **Écrire** la requête en utilisant les noms exacts
+4. **Tester** en local avant de commiter
+
+### Commande utile pour vérifier rapidement
+
+```bash
+# Voir la définition complète d'une table
+grep -A 15 "^CREATE TABLE article " sql/01_schema.sql
+```
+
+### Erreurs typiques à éviter
+
+| ❌ Erreur fréquente | ✓ Bon nom |
 |---|---|
-| Préfixe `id_` pour les PK | `id_membre`, `id_article` |
-| Préfixe `date_` pour les datetimes | `date_inscription`, `date_creation` |
-| `nom` pour les libellés affichables | `categorie.nom`, `statut_commande.nom`, `frais_port.nom` |
-| `code` pour les slugs techniques | `categorie.code = 'informatique'` |
-| `corps` pour le texte long | `billet.corps`, `commentaire.corps` |
-| `message` pour les messages courts | `minichat.message`, `notification.message` |
-| `avis` pour les avis produits | `note_article.avis` |
-| Soft delete : `date_suppression` + `id_membre_suppression` | `billet`, `commentaire` |
+| `article.actif` | `article.dispo` |
+| `commentaire.contenu` | `commentaire.corps` |
+| `commentaire.date_commentaire` | `commentaire.date_comm` |
+| `note_article.commentaire` | `note_article.avis` |
+| `tentative_connexion.login` | `tentative_connexion.login_essaye` |
+| `tentative_connexion.date_tentative` | `tentative_connexion.date_tent` |
+| `achat_facture.frais_port` | `achat_facture.montant_frais_port` |
+| `achat_facture.remise` | `achat_facture.montant_remise` |
 
 ---
 
-*Document maintenu à jour à chaque modification de schéma. Dernière mise à jour : étape 9.*
+**Document maintenu manuellement. Mettre à jour à chaque migration SQL.**

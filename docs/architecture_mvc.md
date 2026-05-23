@@ -1,154 +1,136 @@
-# 🏗️ Architecture MVC du projet PDVWeb
+# 🏗️ Architecture MVC — PDVWeb
 
-Ce document détaille l'architecture **Modèle - Vue - Contrôleur (MVC)** mise en œuvre dans le projet, conformément à l'exigence du cahier des charges :
-
-> *« L'application devra être développée selon l'architecture MVC »*
+Documentation technique de l'architecture du projet.
 
 ---
 
-## Vue d'ensemble
+## Sommaire
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    NAVIGATEUR (client)                   │
-│                                                          │
-│   HTML / CSS Tailwind / JS POO (main.js — classes ES6)  │
-└──────────────────┬──────────────────────────────────────┘
-                   │
-                   │ Requête HTTP (GET/POST)
-                   ▼
-┌─────────────────────────────────────────────────────────┐
-│                     /public/ — CONTRÔLEURS              │
-│  Point d'entrée HTTP. Reçoit les requêtes, valide,      │
-│  appelle les modèles, choisit la vue à rendre.          │
-│                                                          │
-│  Ex: public/inscription.php, public/admin/membres.php   │
-└──────────┬───────────────────────────────┬──────────────┘
-           │                               │
-           │ Lit/Écrit                     │ Choisit
-           ▼                               ▼
-┌────────────────────────┐    ┌───────────────────────────┐
-│   /classes/ — MODÈLES  │    │     /views/ — VUES        │
-│                        │    │                           │
-│  Logique métier +      │    │  Pages HTML/PHP qui       │
-│  accès BDD (PDO).      │    │  affichent les données.   │
-│                        │    │  Aucune logique métier.   │
-│  Ex: Membre, Article,  │    │  Ex: views/auth/login.php │
-│      Facture, Panier   │    │                           │
-└───────────┬────────────┘    └───────────────────────────┘
-            │
-            │ Requêtes préparées
-            ▼
-┌─────────────────────────────────────────────────────────┐
-│                  MySQL — BASE DE DONNÉES                 │
-│                       35 tables                          │
-└─────────────────────────────────────────────────────────┘
-```
+1. [Vue d'ensemble](#1-vue-densemble)
+2. [Pattern MVC hybride](#2-pattern-mvc-hybride)
+3. [Structure des dossiers](#3-structure-des-dossiers)
+4. [Flux d'une requête HTTP](#4-flux-dune-requête-http)
+5. [Conventions de nommage](#5-conventions-de-nommage)
+6. [Autoloader et bootstrap](#6-autoloader-et-bootstrap)
+7. [Couches métier (classes)](#7-couches-métier-classes)
+8. [Vues (templates)](#8-vues-templates)
+9. [JavaScript ES6](#9-javascript-es6)
+10. [Inventaire complet](#10-inventaire-complet)
 
 ---
 
-## Les trois couches en détail
+## 1. Vue d'ensemble
 
-### 1. 📦 Le Modèle (`classes/`)
+PDVWeb suit un **pattern MVC light hybride** :
 
-Le **modèle** encapsule **toute la logique métier et l'accès aux données**.
+- **M (Modèle)** : 26 classes PHP orientées objet dans `classes/`
+- **V (Vue)** : ~48 fichiers PHP/HTML dans `views/`
+- **C (Contrôleur)** : ~70 fichiers PHP dans `public/`
 
-**Caractéristiques** :
-- Classes PHP avec méthodes statiques (style cohérent dans tout le projet)
-- Chaque classe correspond à une entité métier ou un service technique
-- Aucune connaissance de HTTP, HTML ou affichage
-- Toutes les requêtes SQL passent par PDO + prepared statements
-- Code commenté en PHPDoc
+**Statistiques globales :**
+- 154 fichiers PHP
+- ~15 000 lignes de code
+- 0 erreur de syntaxe
 
-**Exemples de modèles métier** :
-| Classe | Rôle |
-|---|---|
-| `Membre` | Inscription, connexion, anonymisation RGPD |
-| `Article` | Catalogue produit, recherche, stock |
-| `Panier` | Gestion du panier en session |
-| `Facture` | Création de commandes (transactions atomiques) |
-| `Billet` / `Commentaire` | Contenu éditorial |
-| `Minichat` | Mini-chat communautaire |
-| `MessagePrive` | Messagerie privée entre membres |
-| `Notification` | Alertes utilisateurs |
+### Choix d'architecture
 
-**Exemples de modèles techniques** (`classes/util/`) :
-| Classe | Rôle |
-|---|---|
-| `Db` | Connexion PDO singleton |
-| `Auth` | Sessions et authentification |
-| `Csrf` | Protection anti-CSRF |
-| `Securite` | Headers HTTP, rate limiting, purge |
-| `Upload` | Validation et stockage des images |
-| `Markdown` | Parser maison anti-XSS |
+Le projet n'utilise pas de framework (Symfony, Laravel) car le **cahier des charges** demande de comprendre les mécaniques bas niveau (sessions, sécurité, routing).
 
-### 2. 🎬 Le Contrôleur (`public/`)
+L'approche **hybride procédural + POO** :
+- **Contrôleurs procéduraux** (publics, simples, prévisibles)
+- **Modèles POO** (méthodes statiques pour simplicité)
+- **Vues HTML** (séparation présentation/logique)
 
-Le **contrôleur** est le **chef d'orchestre** : il reçoit la requête HTTP, valide les entrées, appelle les modèles, et choisit la vue à afficher.
+Cette approche est proche de **Laravel** (sans le framework) ou de **CodeIgniter ancienne version**.
 
-**Caractéristiques** :
-- Un fichier `.php` par action utilisateur
-- Inclut systématiquement `bootstrap.php` qui charge tout (sessions, autoload, helpers)
-- Vérifie les droits d'accès (`Auth::requireLogin()`, `Auth::requireAdmin()`)
-- Vérifie le token CSRF pour tous les POST
-- Termine par un `require` de la vue ou un `header('Location:')`
-- Aucune génération de HTML directe (juste des `$variables` passées à la vue)
+---
 
-**Anatomie type d'un contrôleur** :
+## 2. Pattern MVC hybride
+
+### Schéma de communication
+
+```
+┌──────────────┐         ┌──────────────────┐         ┌──────────────┐
+│              │  GET    │                  │  call   │              │
+│  Navigateur  ├────────►│  Contrôleur      ├────────►│  Modèle      │
+│              │         │  (public/*.php)  │         │  (classes/)  │
+│              │  HTML   │                  │  data   │              │
+│              │◄────────┤                  │◄────────┤              │
+└──────────────┘         └────────┬─────────┘         └──────┬───────┘
+                                  │ require                  │
+                                  ▼                          │ PDO
+                         ┌──────────────────┐                │
+                         │  Vue             │                ▼
+                         │  (views/*.php)   │         ┌──────────────┐
+                         │                  │         │  MySQL       │
+                         └──────────────────┘         │              │
+                                                      └──────────────┘
+```
+
+### Exemple : "afficher la fiche d'un article"
+
+#### 1. Le contrôleur `public/article.php`
 
 ```php
 <?php
 require_once __DIR__ . '/../includes/bootstrap.php';
 
-// 1. Contrôle d'accès
-Auth::requireLogin();
-
-// 2. Récupération paramètres
+// 1. Récupérer l'ID depuis la query string
 $idArticle = (int)($_GET['id'] ?? 0);
-
-// 3. Si POST : validation + appel du modèle
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!Csrf::verifierRequete()) { /* refuse */ }
-    // ... validation ...
-    Article::modifier($idArticle, $donnees);
-    header('Location: /catalogue.php');
+if ($idArticle <= 0) {
+    header('Location: ' . url('/catalogue.php'));
     exit;
 }
 
-// 4. Préparer les données pour la vue
+// 2. Appeler le modèle pour récupérer les données
 $article = Article::trouverParId($idArticle);
+if (!$article) {
+    Flash::erreur('Article introuvable.');
+    header('Location: ' . url('/catalogue.php'));
+    exit;
+}
 
-// 5. Afficher la vue
-$titre = 'Article : ' . $article['nom'];
+// 3. Récupérer données complémentaires
+$statsNotes  = NoteArticle::statistiques($idArticle);
+$tagsArticle = Article::tagsDe($idArticle);
+
+// 4. Passer les variables à la vue
+$titre = $article['nom'];
 require_once VIEWS_PATH . '/catalogue/detail.php';
 ```
 
-### 3. 🖼️ La Vue (`views/`)
+#### 2. Le modèle `classes/Article.php`
 
-La **vue** est responsable **uniquement de l'affichage**. Elle reçoit des variables PHP du contrôleur et produit le HTML final.
+```php
+class Article {
+    public static function trouverParId(int $id): ?array {
+        $req = Db::pdo()->prepare(
+            "SELECT a.*, c.nom AS categorie_nom
+             FROM article a
+             INNER JOIN categorie c ON c.id_categorie = a.id_categorie
+             WHERE a.id_article = ? AND a.dispo = 1"
+        );
+        $req->execute([$id]);
+        return $req->fetch() ?: null;
+    }
+}
+```
 
-**Caractéristiques** :
-- Pages PHP qui contiennent principalement du HTML avec quelques `<?= h($variable) ?>`
-- Aucune requête SQL directe
-- Aucune logique métier (juste des conditions d'affichage)
-- Échappement systématique via `h()` (htmlspecialchars)
-- Inclusion du header/footer commun via `require_once`
-
-**Anatomie type d'une vue** :
+#### 3. La vue `views/catalogue/detail.php`
 
 ```php
 <?php require_once INCLUDES_PATH . '/header.php'; ?>
 
 <h1><?= h($article['nom']) ?></h1>
-<p class="text-gray-600"><?= h($article['description']) ?></p>
-<p class="text-2xl"><?= format_prix($article['prix']) ?></p>
+<p><?= h($article['categorie_nom']) ?></p>
+<p class="text-xl font-bold"><?= format_prix($article['prix']) ?></p>
 
-<?php if (Auth::estConnecte()): ?>
-    <form method="post" action="<?= url('/panier_add.php') ?>">
-        <?= Csrf::champ() ?>
-        <input type="hidden" name="id_article" value="<?= (int)$article['id_article'] ?>">
-        <button type="submit">Ajouter au panier</button>
-    </form>
+<?php if (!empty($tagsArticle)): ?>
+    <div>
+        <?php foreach ($tagsArticle as $tag): ?>
+            <span>#<?= h($tag['nom']) ?></span>
+        <?php endforeach; ?>
+    </div>
 <?php endif; ?>
 
 <?php require_once INCLUDES_PATH . '/footer.php'; ?>
@@ -156,123 +138,476 @@ La **vue** est responsable **uniquement de l'affichage**. Elle reçoit des varia
 
 ---
 
-## Helpers transversaux (`includes/`)
+## 3. Structure des dossiers
 
-Certains éléments ne sont ni modèle, ni contrôleur, ni vue : ce sont des **utilitaires transversaux** :
-
-| Fichier | Rôle |
-|---|---|
-| `bootstrap.php` | Charge config, autoload des classes, démarre la session, applique les headers de sécurité |
-| `helpers.php` | Fonctions utilitaires (`h()`, `url()`, `format_date()`, `format_prix()`, etc.) |
-| `header.php` | En-tête HTML commun + navbar (inclus par chaque vue) |
-| `footer.php` | Pied de page commun + chargement du JS |
+```
+pdvweb/
+├── classes/                       # MODÈLES (26 classes)
+│   ├── util/                      # Classes utilitaires
+│   │   ├── Auth.php               # Authentification + droits
+│   │   ├── Csrf.php               # Protection CSRF
+│   │   ├── Db.php                 # Singleton PDO
+│   │   ├── Flash.php              # Messages flash
+│   │   ├── Helpers.php            # Fonctions h(), url(), etc.
+│   │   └── Upload.php             # Upload sécurisé
+│   ├── AuditLog.php               # Journal d'audit
+│   ├── Article.php                # Articles + tags + comparateur
+│   ├── Billet.php                 # Billets de blog
+│   ├── Categorie.php              # Catégories activables
+│   ├── CodePromo.php              # Codes promo
+│   ├── Commentaire.php
+│   ├── Facture.php                # Commandes + filtres
+│   ├── Favori.php
+│   ├── FraisPort.php              # Grilles tarifaires
+│   ├── Membre.php                 # Membres + actions admin
+│   ├── MessagePrive.php
+│   ├── Minichat.php
+│   ├── Newsletter.php
+│   ├── NoteArticle.php
+│   ├── Notification.php
+│   ├── Panier.php                 # Stocké en session
+│   ├── Parametre.php              # Paramètres applicatifs
+│   ├── Permission.php
+│   ├── RechercheLog.php
+│   ├── Role.php
+│   ├── Tag.php                    # CRUD complet
+│   └── Token.php                  # Reset mdp / vérif email
+│
+├── config/                        # Configuration (hors public)
+│   ├── config.example.php         # Template à dupliquer
+│   └── config.php                 # ⚠️ Hors git (mots de passe BDD)
+│
+├── docs/                          # Documentation
+│   ├── architecture_mvc.md        # Ce fichier
+│   ├── audit_securite.md          # Conformité OWASP
+│   ├── guide_git.md               # Procédure git
+│   ├── justification_tables.md    # Pourquoi ces tables
+│   ├── manuel_utilisateur.md      # Guide pratique
+│   ├── schema_reference.md        # Référence colonnes
+│   ├── securite.md                # Mesures techniques
+│   └── captures/                  # Captures d'écran
+│
+├── includes/                      # Fragments réutilisables
+│   ├── bootstrap.php              # Autoloader + init + session
+│   ├── header.php                 # Nav + meta + skip link
+│   ├── footer.php                 # Footer + badges sécurité
+│   └── admin_header.php           # Bandeau admin
+│
+├── public/                        # CONTRÔLEURS (point d'entrée web)
+│   ├── index.php                  # Accueil
+│   ├── catalogue.php              # Liste articles avec filtres
+│   ├── article.php                # Fiche article
+│   ├── comparer.php               # Comparateur (Phase 3.3)
+│   ├── panier.php                 # Voir panier
+│   ├── panier_ajouter.php         # Action POST
+│   ├── panier_update.php          # Action POST
+│   ├── commande_valider.php       # Validation finale
+│   ├── login.php / logout.php     # Auth
+│   ├── inscription.php
+│   ├── profil.php
+│   ├── adresses.php / adresse_form.php
+│   ├── favoris.php / favori_toggle.php
+│   ├── messages.php / messages_nouveau.php / messages_thread.php
+│   ├── notifications.php
+│   ├── blog.php / billet.php
+│   ├── minichat.php
+│   ├── mentions_legales.php       # RGPD
+│   ├── 404.php
+│   ├── assets/                    # CSS, JS, images statiques
+│   │   ├── css/style.css
+│   │   ├── js/
+│   │   └── img/
+│   ├── uploads/                   # Fichiers uploadés
+│   │   ├── articles/
+│   │   ├── avatars/
+│   │   └── billets/
+│   └── admin/                     # ESPACE ADMIN (32 contrôleurs)
+│       ├── index.php              # Dashboard
+│       ├── membres.php / membre_detail.php
+│       ├── membre_action.php      # Bloquer, promouvoir, anonymiser
+│       ├── membre_form.php        # Modifier données
+│       ├── articles.php / article_form.php / article_supprimer.php
+│       ├── billets.php / billet_form.php / billet_supprimer.php
+│       ├── categories.php / categorie_form.php / categorie_supprimer.php
+│       ├── codes_promo.php / code_promo_form.php / code_promo_supprimer.php
+│       ├── frais_port.php / frais_port_form.php / frais_port_supprimer.php
+│       ├── tags.php / tag_form.php / tag_supprimer.php
+│       ├── commandes.php / commande_statut.php / commandes_export.php
+│       ├── stats_top.php / stats_connexion.php / stats_recherches.php
+│       ├── audit.php
+│       ├── securite.php / corbeille.php
+│       └── parametres.php
+│
+├── sql/                           # Migrations BDD
+│   ├── 00_install_complet.sql     # Script tout-en-un
+│   ├── 01_schema.sql              # Schéma initial
+│   ├── 02_seed.sql                # Données de démo
+│   ├── 03_migration_soft_delete.sql
+│   ├── 04_fix_anonymisation_order.sql
+│   ├── 05_migration_mode_livraison.sql
+│   ├── 06_migration_mp.sql
+│   ├── 07_migration_pseudo_minichat.sql
+│   ├── 08_migration_billet_resume_image.sql
+│   ├── 09_migration_categorie_actif.sql
+│   └── 10_migration_article_tag.sql
+│
+├── views/                         # VUES (~48 fichiers)
+│   ├── accueil.php
+│   ├── mentions_legales.php
+│   ├── comparer.php               # Tableau comparatif
+│   ├── auth/
+│   │   ├── login.php
+│   │   ├── inscription.php
+│   │   ├── profil.php
+│   │   ├── adresses.php / adresse_form.php
+│   │   ├── favoris.php
+│   │   ├── messages.php / messages_thread.php
+│   │   ├── notifications.php
+│   │   └── ...
+│   ├── catalogue/
+│   │   ├── liste.php              # Avec filtres avancés
+│   │   └── detail.php
+│   ├── blog/
+│   │   ├── liste.php
+│   │   └── detail.php
+│   ├── panier/
+│   │   └── voir.php
+│   └── admin/                     # ~30 vues admin
+│       ├── index.php              # Dashboard
+│       ├── membres.php / membre_detail.php / membre_form.php
+│       ├── articles.php / article_form.php
+│       ├── billets.php / billet_form.php
+│       ├── categories.php / categorie_form.php
+│       ├── codes_promo.php / code_promo_form.php
+│       ├── frais_port.php / frais_port_form.php
+│       ├── tags.php / tag_form.php
+│       ├── commandes.php
+│       └── ...
+│
+├── .gitignore
+├── README.md
+└── install.bat                    # Installation Windows automatique
+```
 
 ---
 
-## Exemple complet : "Modifier un article"
+## 4. Flux d'une requête HTTP
 
-Suivons le flux complet d'une action utilisateur.
+### Exemple : "GET /pdvweb/public/catalogue.php?categorie=2"
 
-### 1. L'utilisateur clique sur "Modifier" → URL appelée :
 ```
-GET /admin/article_form.php?id=42
-```
+1. APACHE
+   - Reçoit la requête
+   - Cherche le fichier catalogue.php dans public/
+   - Délègue à PHP
 
-### 2. Le contrôleur (`public/admin/article_form.php`) traite :
-```php
-Auth::requireAdmin();                               // Sécurité
-$idArticle = (int)($_GET['id'] ?? 0);              // Lecture param
-$article = Article::trouverParId($idArticle);      // Appel modèle
-require_once VIEWS_PATH . '/admin/article_form.php'; // Choix vue
-```
+2. PHP / bootstrap.php
+   - Charge config/config.php
+   - Connexion BDD (singleton Db::pdo())
+   - Démarre la session (cookies HTTPOnly)
+   - Définit l'autoloader (charge automatiquement les classes)
+   - Charge les helpers (h(), url(), format_prix(), etc.)
 
-### 3. Le modèle (`classes/Article.php`) interroge la BDD :
-```php
-public static function trouverParId(int $id): ?array {
-    $req = Db::pdo()->prepare("SELECT * FROM article WHERE id_article = ?");
-    $req->execute([$id]);
-    return $req->fetch() ?: null;
-}
-```
+3. catalogue.php (CONTRÔLEUR)
+   - Récupère $_GET['categorie']
+   - Valide (cast int, vérifie > 0)
+   - Appelle Article::lister([...])
 
-### 4. La vue (`views/admin/article_form.php`) affiche le formulaire :
-```html
-<form method="post">
-    <input type="text" name="nom" value="<?= h($article['nom']) ?>">
-    ...
-</form>
-```
+4. classes/Article.php (MODÈLE)
+   - Prépare la requête SQL avec PDO
+   - Exécute avec les paramètres
+   - Retourne le résultat
 
-### 5. L'utilisateur soumet → POST sur le même contrôleur :
-```
-POST /admin/article_form.php?id=42
-```
+5. catalogue.php (suite)
+   - Reçoit les articles
+   - Définit $titre = 'Catalogue'
+   - require views/catalogue/liste.php
 
-### 6. Le contrôleur valide et appelle le modèle :
-```php
-if (!Csrf::verifierRequete()) { /* refuse */ }
-// ... validation ...
-Article::modifier($idArticle, $donnees);            // Appel modèle
-header('Location: /admin/articles.php');            // Redirection
-```
+6. views/catalogue/liste.php (VUE)
+   - require includes/header.php (nav + meta)
+   - Boucle sur $articles et affiche le HTML
+   - require includes/footer.php
 
-### 7. Le modèle exécute l'UPDATE :
-```php
-public static function modifier(int $id, array $donnees): bool {
-    $req = Db::pdo()->prepare(
-        "UPDATE article SET nom = ?, prix = ?, stock = ? WHERE id_article = ?"
-    );
-    return $req->execute([$donnees['nom'], $donnees['prix'], $donnees['stock'], $id]);
-}
+7. PHP envoie la réponse HTML au navigateur
 ```
-
-**Chaque responsabilité est isolée** : c'est exactement ce qu'on attend du MVC.
 
 ---
 
-## JavaScript côté client : POO également
+## 5. Conventions de nommage
 
-Le fichier `public/assets/js/main.js` utilise lui aussi l'**approche orientée objet** (classes ES6) :
+### Fichiers
+
+- **Contrôleurs** : `snake_case.php` (ex: `article_supprimer.php`)
+- **Classes** : `PascalCase.php` (ex: `Article.php`, `CodePromo.php`)
+- **Vues** : `snake_case.php` (ex: `messages_thread.php`)
+
+### Classes PHP
+
+- **Noms de classe** : `PascalCase` (ex: `class Article`)
+- **Méthodes** : `camelCase` (ex: `trouverParId`, `lister`, `creer`)
+- **Méthodes statiques** uniquement (pas d'instanciation pour les modèles)
+
+### Variables
+
+- **Noms** : `camelCase` (ex: `$idMembre`, `$articlesACompar`)
+- **Tableaux associatifs** : reflètent les colonnes BDD (ex: `$article['nom']`)
+
+### Routes / URLs
+
+- **Pages publiques** : `/page.php`
+- **Actions POST** : `/page_action.php` (ex: `/favori_toggle.php`)
+- **Admin** : `/admin/page.php`
+- **Form admin** : `/admin/entite_form.php?id=X`
+- **Suppression admin** : `/admin/entite_supprimer.php`
+
+### Tables MySQL
+
+- **Noms** : `snake_case`, singulier (ex: `membre`, `code_promo`)
+- **Tables de liaison** : `parent_enfant` (ex: `billet_tag`, `article_tag`)
+- **Primary keys** : `id_<table>` (ex: `id_membre`, `id_article`)
+- **Foreign keys** : portent le nom de la PK référencée
+
+---
+
+## 6. Autoloader et bootstrap
+
+### `includes/bootstrap.php`
+
+```php
+<?php
+// 1. Configuration
+require_once __DIR__ . '/../config/config.php';
+
+// 2. Constantes utiles
+define('CLASSES_PATH', __DIR__ . '/../classes');
+define('VIEWS_PATH',   __DIR__ . '/../views');
+define('INCLUDES_PATH', __DIR__);
+define('UPLOADS_PATH', __DIR__ . '/../public/uploads');
+
+// 3. Autoloader (charge automatiquement les classes)
+spl_autoload_register(function ($classe) {
+    $candidates = [
+        CLASSES_PATH . '/' . $classe . '.php',
+        CLASSES_PATH . '/util/' . $classe . '.php',
+    ];
+    foreach ($candidates as $f) {
+        if (file_exists($f)) {
+            require_once $f;
+            return;
+        }
+    }
+});
+
+// 4. Helpers (fonctions globales)
+require_once CLASSES_PATH . '/util/Helpers.php';
+
+// 5. Session sécurisée
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Lax',
+    'cookie_secure'   => !empty($_SERVER['HTTPS']),
+]);
+```
+
+### Pourquoi un autoloader ?
+
+Sans autoloader, il faudrait `require_once` chaque classe au début de chaque fichier. L'autoloader détecte automatiquement quelle classe charger quand on l'utilise pour la première fois.
+
+```php
+// Sans autoloader
+require_once 'classes/Article.php';
+require_once 'classes/Categorie.php';
+$article = Article::trouverParId(1);
+
+// Avec autoloader
+$article = Article::trouverParId(1);  // Article.php est chargé automatiquement
+```
+
+---
+
+## 7. Couches métier (classes)
+
+### Pattern utilisé
+
+Toutes les classes du modèle utilisent **uniquement des méthodes statiques** :
+
+```php
+// Pas d'instanciation
+$article = Article::trouverParId(5);  // ✓
+$article->trouverParId(5);            // ✗
+```
+
+**Pourquoi ?**
+- Plus simple (pas de constructeur, pas de propriétés)
+- Pas d'état entre les appels
+- Reflète bien les opérations CRUD sur BDD
+
+### Liste des classes métier
+
+| Classe | Rôle | Méthodes principales |
+|---|---|---|
+| `Article` | Articles + tags + comparateur | `lister`, `trouverParId`, `creer`, `modifier`, `supprimer`, `tagsDe`, `associerTags`, `pourComparaison` |
+| `Billet` | Billets blog | `lister`, `trouverParId`, `creer`, `modifier`, `supprimer`, `tagsDe`, `restaurer` |
+| `Categorie` | Catégories | `listerTous`, `listerActives`, `basculerActif` |
+| `CodePromo` | Codes promo | CRUD + `appliquer`, `verifier` |
+| `Commentaire` | Commentaires | CRUD + `restaurer` |
+| `Facture` | Commandes | `creerDepuisPanier`, `listerToutes` (avec filtres + pagination), `changerStatut`, `chiffreAffaires` |
+| `Favori` | Favoris | `ajouter`, `retirer`, `aFavori` |
+| `FraisPort` | Grilles tarifaires | CRUD + `calculer`, `listerDisponibles` |
+| `Membre` | Membres | CRUD + `tenterConnexion`, `anonymiser`, `mettreAJourAdmin`, `bloquer`, `changerRole` |
+| `MessagePrive` | Messages privés | `envoyer`, `conversations`, `bloquer` |
+| `Minichat` | Mini-chat | `derniers`, `poster`, `pseudoActif` |
+| `Newsletter` | Newsletter | `inscrire`, `desinscrire` |
+| `NoteArticle` | Notes/avis | `noter`, `statistiques`, `aAcheteArticle` |
+| `Notification` | Notifications | `creer`, `marquerLue`, `nbNonLues` |
+| `Panier` | Panier (session) | `ajouter`, `retirer`, `vider`, `detail` |
+| `Parametre` | Paramètres app | `get`, `set`, `getAll` |
+| `Tag` | Tags | CRUD + `codeExiste` |
+| `Token` | Tokens auth | `creer`, `verifier`, `consommer` |
+| `AuditLog` | Journal audit | `enregistrer`, `lister` |
+
+### Helpers (fonctions globales)
+
+```php
+h($texte)              // htmlspecialchars (XSS protection)
+url($path)             // Génère URL absolue
+asset_article($img)    // URL d'une image article
+asset_avatar($img)     // URL d'un avatar
+format_prix($val)      // "10,99 €"
+format_date_courte()   // "13/06/2026"
+nom_membre($m)         // Gère le cas anonymisé
+parametre($cle, $def)  // Récupère un paramètre
+actif($url)            // CSS class si page courante
+```
+
+---
+
+## 8. Vues (templates)
+
+### Pattern
+
+Les vues sont des fichiers PHP qui :
+- N'ont pas d'accès direct à la BDD
+- Reçoivent leurs variables du contrôleur
+- Affichent du HTML avec `<?= h($var) ?>` pour échapper
+
+### Anatomie d'une vue
+
+```php
+<?php
+/**
+ * views/catalogue/detail.php
+ * Variables : $article, $tagsArticle, $statsNotes
+ */
+require_once INCLUDES_PATH . '/header.php';
+?>
+
+<div class="max-w-4xl mx-auto">
+    <h1><?= h($article['nom']) ?></h1>
+    <!-- Reste du HTML -->
+</div>
+
+<?php require_once INCLUDES_PATH . '/footer.php'; ?>
+```
+
+### Composants CSS réutilisables
+
+`public/assets/css/style.css` définit :
+- `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-danger`, `.btn-success`
+- `.badge`, `.badge-success`, `.badge-warning`, etc.
+- `.card`, `.card-hover`
+- `.input-base`
+- `.spinner`, `.skeleton`
+- `.line-clamp-1/2/3`
+
+---
+
+## 9. JavaScript ES6
+
+### Fichiers JS
+
+```
+public/assets/js/
+├── confirm.js         # data-confirm="..."
+├── csrf.js            # Auto-rafraîchissement des tokens
+├── search.js          # Recherche temps réel
+├── upload-preview.js  # Aperçu image avant upload
+├── minichat.js        # Refresh mini-chat
+└── form-validate.js   # Validation HTML5 améliorée
+```
+
+### Exemple : `confirm.js`
 
 ```javascript
-class FlashMessageManager { init() { /* ... */ } }
-class ConfirmationManager { /* ... */ }
-class DropdownMenuManager { /* ... */ }
-class CharacterCounter { /* ... */ }
-class AvatarPreview { /* ... */ }
-class PDVWebApp { /* orchestre les managers */ }
-
-const app = new PDVWebApp();
-app.demarrer();
+// Confirmation automatique sur tout bouton avec data-confirm="..."
+document.addEventListener('submit', (e) => {
+    const btn = e.submitter;
+    if (!btn?.dataset.confirm) return;
+    if (!confirm(btn.dataset.confirm)) {
+        e.preventDefault();
+    }
+});
 ```
 
-Chaque manager a une responsabilité unique (Single Responsibility Principle).
+Utilisation dans le HTML :
+
+```html
+<button type="submit" data-confirm="Vraiment supprimer ?">
+    Supprimer
+</button>
+```
 
 ---
 
-## Pourquoi MVC ?
+## 10. Inventaire complet
 
-| Bénéfice | Comment c'est concrétisé ici |
+### Stats par dossier
+
+| Dossier | Fichiers PHP | Description |
+|---|---|---|
+| `classes/` | 26 | Modèles + utilitaires |
+| `public/` | 35 | Contrôleurs publics |
+| `public/admin/` | 32 | Contrôleurs admin |
+| `views/` | 5 | Vues racines (accueil, mentions, comparer, etc.) |
+| `views/auth/` | ~15 | Vues membre |
+| `views/catalogue/` | 2 | Liste + détail |
+| `views/blog/` | 2 | Liste + détail |
+| `views/panier/` | 1 | Voir panier |
+| `views/admin/` | ~30 | Vues admin |
+| `includes/` | 4 | bootstrap, header, footer, admin_header |
+| **TOTAL** | **~154** | **PHP** |
+
+### Tables BDD
+
+| Catégorie | Tables |
 |---|---|
-| **Séparation des responsabilités** | Modèles SQL, contrôleurs HTTP, vues HTML — chacun son rôle |
-| **Testabilité** | Les méthodes statiques des modèles peuvent être appelées indépendamment de toute requête HTTP |
-| **Réutilisabilité** | `Membre::trouverParId()` est appelée depuis 20+ contrôleurs différents |
-| **Maintenabilité** | Pour modifier une règle métier, on touche au modèle uniquement, pas aux vues |
-| **Sécurité** | Le contrôleur centralise les contrôles (CSRF, Auth, validation) avant tout accès au modèle |
+| Membres & sécurité | `membre`, `adresse`, `role`, `permission`, `role_permission`, `membre_role`, `token`, `tentative_connexion`, `log_connexion`, `audit_log`, `consentement_rgpd` |
+| Catalogue | `categorie`, `article`, `article_tag`, `vue_article`, `note_article` |
+| Vente | `statut_commande`, `achat_facture`, `ligne_facture`, `paiement`, `frais_port`, `code_promo`, `code_promo_utilisation` |
+| Engagement | `favori`, `newsletter_abonne`, `like_contenu`, `recherche_log` |
+| Contenu | `billet`, `commentaire`, `tag`, `billet_tag` |
+| Communication | `minichat`, `message_prive`, `notification` |
+| Système | `parametre` |
+
+### Migrations SQL
+
+10 migrations incrémentales (voir README).
 
 ---
 
-## Conclusion
+## Points forts de cette architecture
 
-L'architecture MVC du projet PDVWeb respecte les principes fondamentaux :
-
-✅ Les **modèles** (26 classes) encapsulent la logique métier et l'accès BDD
-✅ Les **contrôleurs** (61 fichiers dans `public/`) orchestrent les requêtes
-✅ Les **vues** (41 fichiers dans `views/`) ne font que de l'affichage
-✅ Le **JavaScript** côté client utilise l'approche **orientée objet** (ES6 classes)
-
-Cette architecture rend le code **lisible**, **maintenable**, **testable** et **sécurisé**.
+1. **Pas de framework** → comprendre les mécaniques (sessions, sécurité, routing)
+2. **MVC respecté** → séparation claire des responsabilités
+3. **PDO 100%** → aucune injection SQL possible
+4. **Audit log** → traçabilité totale (conformité RGPD)
+5. **Autoloader** → pas de require_once partout
+6. **Helpers globaux** → code plus lisible
+7. **Soft-delete** → corbeille pour billets/commentaires
+8. **Migrations versionnées** → évolution du schéma reproductible
+9. **Pas de couplage fort** → chaque classe est testable individuellement
+10. **Accessibilité** → skip link, ARIA, prefers-reduced-motion
 
 ---
 
-*Document à jour à l'étape finale du projet (mai 2026).*
+**Architecture documentée le 23 mai 2026 — Mise à jour avec Phase 3.**

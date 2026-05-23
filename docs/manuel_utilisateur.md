@@ -10,293 +10,447 @@ Guide pratique pour découvrir et utiliser l'application PDVWeb.
 2. [Premiers pas — Visiteur](#2-premiers-pas--visiteur)
 3. [Créer un compte](#3-créer-un-compte)
 4. [Acheter un article](#4-acheter-un-article)
-5. [Gérer son compte](#5-gérer-son-compte)
-6. [Le blog](#6-le-blog)
-7. [Le mini-chat](#7-le-mini-chat)
-8. [Administration](#8-administration)
-9. [FAQ](#9-faq)
+5. [Filtres avancés du catalogue](#5-filtres-avancés-du-catalogue)
+6. [Comparateur d'articles](#6-comparateur-darticles)
+7. [Gérer son compte](#7-gérer-son-compte)
+8. [Le blog](#8-le-blog)
+9. [Le mini-chat](#9-le-mini-chat)
+10. [Messagerie privée](#10-messagerie-privée)
+11. [Administration](#11-administration)
+12. [FAQ](#12-faq)
 
 ---
 
 ## 1. Qui peut faire quoi ?
 
-| Action | Visiteur (non connecté) | Membre | Administrateur |
-|---|:---:|:---:|:---:|
+| Action | Visiteur | Membre | Admin |
+|---|:-:|:-:|:-:|
 | Parcourir le catalogue | ✅ | ✅ | ✅ |
 | Voir le détail d'un article | ✅ | ✅ | ✅ |
-| Mettre dans le panier | ✅ | ✅ | ✅ |
+| Comparateur d'articles | ✅ | ✅ | ✅ |
+| Filtres avancés catalogue | ✅ | ✅ | ✅ |
 | Lire le blog | ✅ | ✅ | ✅ |
-| Lire le mini-chat | ❌ | ✅ | ✅ |
-| Envoyer un message privé | ❌ | ✅ | ✅ |
-| Acheter | ❌ | ✅ | ✅ |
-| Commenter un billet | ❌ | ✅ | ✅ |
-| Poster sur le mini-chat | ❌ | ✅ | ✅ |
-| Noter un article (acheté) | ❌ | ✅ | ✅ |
-| Mettre en favori | ❌ | ✅ | ✅ |
-| Espace admin | ❌ | ❌ | ✅ |
+| Mettre dans le panier | ✅ | ✅ | ✅ |
+| **Passer commande** | ❌ | ✅ | ✅ |
+| **Mini-chat** | ❌ | ✅ | ✅ |
+| **Commenter un billet** | ❌ | ✅ | ✅ |
+| Noter un article | ❌ | ✅ | ✅ |
+| Messages privés | ❌ | ✅ | ✅ |
+| Favoris | ❌ | ✅ | ✅ |
+| **Modifier profil** | ❌ | ✅ | ✅ |
+| **Anonymiser son compte** (RGPD) | ❌ | via support | ✅ |
+| Espace administration | ❌ | ❌ | ✅ |
 
 ---
 
 ## 2. Premiers pas — Visiteur
 
-**Page d'accueil** : `http://localhost/pdvweb/public/`
+### Page d'accueil
 
-Sans être connecté, vous pouvez déjà :
-- Cliquer sur **Catalogue** dans le menu pour voir tous les produits
-- Filtrer par catégorie (Informatique, Hi-Fi, Livres)
-- Trier par prix, popularité, etc.
-- Mettre des articles dans le panier (le panier est conservé tant que vous restez sur le site)
-- Lire le **Blog** (articles publiés par les administrateurs)
+L'accueil présente :
+- Une bannière de bienvenue
+- 4 statistiques (articles, catégories, membres, billets)
+- Les 3 rayons (Informatique / Livres / Hi-Fi)
+- Les coups de cœur (3 articles les mieux notés)
+- Les dernières actualités du blog
 
-Pour faire plus, il faut un compte.
+### Parcourir le catalogue
+
+Cliquer sur **"Catalogue"** dans la barre de navigation.
+
+Vous pouvez :
+- **Chercher** un produit par mot-clé
+- **Filtrer par catégorie** (Informatique, Livres, Hi-Fi)
+- **Filtrer par tag** (#Promo, #Nouveauté, etc.)
+- **Trier** : plus récents, alphabétique, prix croissant/décroissant, plus vendus, mieux notés
+- Utiliser les **filtres avancés** (panneau dépliable) : prix min/max, stock, note minimale
+
+### Voir un article
+
+Cliquer sur n'importe quel article pour voir :
+- L'image grand format
+- Le prix et le stock
+- La description complète
+- Les tags
+- Les avis et notes des autres membres
+- Les articles similaires
+
+### Comparer des articles
+
+Sur chaque card du catalogue, un bouton **"⚖️ Comparer"** ajoute l'article au comparateur (jusqu'à 4 articles).
+
+Un badge dans la barre de navigation indique combien d'articles sont en attente de comparaison.
+
+Cliquer sur le badge pour voir le **tableau comparatif** (prix, note, stock, poids, etc.).
 
 ---
 
 ## 3. Créer un compte
 
-1. Cliquez sur **Inscription** en haut à droite
-2. Remplissez : prénom, nom, date de naissance, email, login, mot de passe
-3. (Optionnel) Choisissez un avatar (.gif ou .jpg, max 5 Mo)
-4. Cliquez sur **Créer mon compte**
+### Étapes
 
-Une fois connecté, le menu en haut à droite vous donne accès à :
-- **Mon profil** — modifier vos infos, changer mot de passe
-- **Mes adresses** — gérer vos adresses de livraison
-- **Mes achats** — historique des commandes
-- **Mes favoris** — articles que vous suivez
-- **Mes notifications** (cloche) — alertes sur vos commandes
+1. Cliquer sur **"Inscription"** en haut à droite
+2. Remplir le formulaire :
+   - Prénom, nom, date de naissance
+   - Email (vérification d'unicité)
+   - Login (3-50 caractères, lettres + chiffres + tirets)
+   - Mot de passe (minimum 8 caractères)
+   - Avatar optionnel (.gif ou .jpeg, max 2 Mo)
+3. Cocher l'acceptation des conditions
+4. Cliquer sur "Créer mon compte"
 
-### Mot de passe oublié ?
+### Conformité RGPD
 
-Sur la page de connexion, cliquez sur **Mot de passe oublié ?**. Vous recevrez un lien valable 1 heure pour réinitialiser votre mot de passe.
+L'inscription est conforme au RGPD :
+- Vos données sont stockées de manière sécurisée
+- Vous pouvez les consulter à tout moment
+- Vous pouvez demander leur suppression (anonymisation)
+- Aucune donnée n'est partagée avec des tiers
 
-### Comptes de test
-
-En mode développement, des comptes prêts à l'emploi sont affichés sur la page de connexion :
-
-| Login | Mot de passe | Rôle |
-|---|---|---|
-| `admin` | `admin2026` | Administrateur |
-| `jdupont` | `test1234` | Membre |
-| `smartin` | `test1234` | Membre |
-| `mlambert` | `test1234` | Membre |
+Voir la page **Mentions légales** pour le détail.
 
 ---
 
 ## 4. Acheter un article
 
-### Mettre dans le panier
+### Étape 1 — Ajouter au panier
 
-1. Sur n'importe quel article du catalogue, choisissez la quantité (1 à 10)
-2. Cliquez sur **Ajouter au panier** — le badge en haut s'incrémente
+Sur la fiche article, choisir la quantité puis cliquer sur **"Ajouter au panier"**.
 
-### Passer commande
+Le panier est accessible via l'icône **🛒** en haut à droite (badge avec le nombre d'articles).
 
-1. Cliquez sur l'icône 🛒 en haut à droite
-2. Vérifiez vos articles, ajustez les quantités si besoin
-3. Cliquez sur **Passer commande**
-4. Choisissez :
-   - Une **adresse de livraison** (si vous n'en avez pas, ajoutez-en une)
-   - Un **mode de livraison** (Standard, Express, etc.)
-   - (Optionnel) Un **code promo** — essayez `BIENVENUE10`
-   - Le **mode de paiement** (carte, PayPal, virement — tous simulés pour le TFM)
-5. Cliquez sur **Payer**
-6. Vous arrivez sur la **page de confirmation** avec votre facture (imprimable)
+### Étape 2 — Voir et modifier le panier
 
-### Le panier persiste...
-- ✅ pendant toute votre session (vous pouvez vous balader sur le site)
-- ❌ à la prochaine connexion (le panier est vidé au logout/login — conforme au cahier des charges)
+Sur la page panier, vous pouvez :
+- Modifier les quantités
+- Supprimer des articles
+- Voir le sous-total
 
-### Consulter mes commandes
+### Étape 3 — Code promo (optionnel)
 
-**Menu utilisateur → Mes achats** : liste de toutes vos commandes avec leur statut (Payée, En préparation, Expédiée, Livrée, etc.). Cliquez sur une commande pour voir la facture détaillée.
+Si vous avez un code promo, le saisir dans le champ prévu.
+
+Les codes promo peuvent offrir :
+- Une remise en pourcentage (ex: -10%)
+- Une remise fixe (ex: -5€)
+- Frais de port offerts
+
+### Étape 4 — Adresse de livraison
+
+Si vous n'avez pas encore d'adresse, en ajouter une via **"Mon profil > Mes adresses"**.
+
+Vous pouvez avoir plusieurs adresses et choisir celle de livraison/facturation à chaque commande.
+
+### Étape 5 — Frais de port
+
+Le système calcule automatiquement les frais selon :
+- Le pays de livraison
+- Le montant du panier
+
+Plusieurs options peuvent être proposées (standard, express, livraison gratuite dès X€).
+
+### Étape 6 — Valider la commande
+
+Cliquer sur **"Valider ma commande"**.
+
+Un récapitulatif s'affiche avec le numéro de référence (ex: `PDV-20260613-0001`).
+
+### Suivi de commande
+
+Dans **"Mes achats"** :
+- Vous voyez l'historique complet
+- Chaque commande affiche son statut : En attente → Payée → Préparation → Expédiée → Livrée
+- Vous recevez une **notification** à chaque changement de statut
 
 ---
 
-## 5. Gérer son compte
+## 5. Filtres avancés du catalogue
+
+Le catalogue offre des filtres puissants pour trouver rapidement ce que vous cherchez.
+
+### Filtres simples (toujours visibles)
+
+- **Recherche texte** : cherche dans le nom et la description
+- **Tri** : 6 options de tri
+- **Catégorie** : boutons cliquables
+- **Tag** : boutons cliquables (si des tags existent)
+
+### Filtres avancés (panneau dépliable)
+
+Cliquer sur **"Filtres avancés"** pour déplier :
+
+| Filtre | Description |
+|---|---|
+| Prix minimum | N'affiche que les articles ≥ ce prix |
+| Prix maximum | N'affiche que les articles ≤ ce prix |
+| Note minimale | 1 étoile et plus, ..., 5 étoiles seulement |
+| En stock uniquement | Masque les articles épuisés |
+
+Un badge **"actifs"** apparaît quand des filtres sont en cours.
+
+Bouton **"Réinitialiser les filtres avancés"** pour repartir à zéro.
+
+---
+
+## 6. Comparateur d'articles
+
+Permet de comparer jusqu'à **4 articles côte à côte** pour faire un choix éclairé.
+
+### Ajouter un article
+
+Trois façons :
+1. **Depuis le catalogue** : bouton "⚖️ Comparer" sur chaque card
+2. **Depuis la fiche article** : bouton "⚖️ Ajouter au comparateur"
+3. **Via URL** : `/comparer.php?ids=1,5,8` (utile pour le partage)
+
+### Badge dans la navigation
+
+Quand au moins 1 article est dans le comparateur, un badge **⚖️** apparaît dans la barre de navigation.
+
+### Tableau comparatif
+
+7 critères affichés en colonnes :
+
+| Critère | Description |
+|---|---|
+| Image + Nom | Cliquable vers la fiche article |
+| Prix | En gras |
+| Catégorie | Informatique / Livres / Hi-Fi |
+| Note moyenne | Étoiles + score + nombre d'avis |
+| Disponibilité | En stock / Rupture |
+| Poids | En grammes |
+| Description | Extrait court (200 caractères) |
+| Popularité | Nombre de ventes ou "Nouveau" |
+
+### Retirer / vider
+
+- Cliquer sur la **croix rouge** en haut à droite de chaque colonne
+- Ou cliquer sur **"Vider"** pour tout effacer
+
+### Partager
+
+Une URL de partage est générée automatiquement avec les IDs des articles. Vous pouvez la copier-coller pour la partager avec quelqu'un.
+
+---
+
+## 7. Gérer son compte
 
 ### Mon profil
-- Modifier prénom, nom, email, date de naissance
-- Changer l'avatar
-- Changer le mot de passe (nécessite l'ancien)
+
+Accessible via **"Mon profil"** en haut à droite (icône avatar).
+
+Vous pouvez modifier :
+- Votre photo de profil (avatar)
+- Vos informations personnelles (nom, prénom, email)
+- Votre mot de passe
 
 ### Mes adresses
-- Ajouter plusieurs adresses (Domicile, Bureau, etc.)
-- Définir une adresse par défaut
-- Modifier ou supprimer une adresse existante
 
-### Supprimer mon compte (RGPD)
-**Mon profil → Zone dangereuse → Supprimer mon compte**
+Ajout, modification et suppression d'adresses postales.
 
-- Saisissez votre mot de passe + tapez `SUPPRIMER` en majuscules
-- **Vos données personnelles sont anonymisées** (login, email, nom remplacés par des valeurs anonymes)
-- Vos commandes et commentaires restent visibles mais comme **« Utilisateur supprimé »**
-- Cette action est **irréversible**
+Une adresse peut être marquée comme **par défaut** pour faciliter les commandes.
 
-> 📌 Conformité RGPD article 17 (droit à l'oubli) : anonymisation au lieu de suppression pure pour conserver l'intégrité des données comptables et historiques.
+### Mes favoris
 
----
+Liste des articles que vous avez marqués comme favoris (cœur ❤️ sur les fiches articles).
 
-## 6. Le blog
+### Mes notifications
 
-Le **Blog** est alimenté par les administrateurs. En tant que membre, vous pouvez :
+Toutes les notifications reçues :
+- Changement de statut de commande
+- Nouveau message privé
+- Réponse à un commentaire
+- ...
 
-- **Lire** tous les billets
-- **Filtrer** par tag ou rechercher par mot-clé
-- **Trier** par récents / populaires / les plus commentés
-- **Commenter** un billet
-- **Modifier vos propres commentaires** (l'admin ne peut pas — c'est votre discours)
-- **Aimer** un billet ou un commentaire (icône cœur)
+### Mes droits RGPD
 
-### Modération admin
-
-L'administrateur peut **supprimer** un commentaire jugé inapproprié, mais ne peut **jamais le modifier** — pour préserver l'intégrité du discours.
+Conformément au RGPD :
+- **Accès** : voir toutes vos données (profil)
+- **Rectification** : modifier vos données (profil)
+- **Effacement** : demander l'anonymisation (contacter le support)
+- **Portabilité** : export de vos données sur demande
 
 ---
 
-## 7. Le mini-chat
+## 8. Le blog
 
-**Menu → Mini-chat** (membres connectés uniquement)
+Accessible via **"Blog"** dans la navigation.
 
-- Affiche les **10 derniers messages** de la communauté
-- Compteur de caractères en temps réel (orange à 90%)
-- Vous pouvez supprimer vos propres messages
-- L'admin peut supprimer tous les messages
-- Lien **"message"** à côté de chaque pseudo pour démarrer une **conversation privée** avec ce membre
+### Lire un billet
 
+Cliquer sur un titre ou "Lire la suite" pour ouvrir le billet complet.
 
-## 7bis. La messagerie privée
+### Commenter
 
-**Menu utilisateur → Ma messagerie** ou icône ✉️ dans la navbar
+Si vous êtes connecté, un formulaire de commentaire est affiché en bas du billet.
 
-La messagerie privée permet d'écrire à un autre membre en boucle fermée (les messages ne sont visibles que par expéditeur et destinataire).
+Le commentaire :
+- Doit être respectueux (modération possible par l'admin)
+- Peut être édité si vous êtes son auteur
+
+### Filtres
+
+- Recherche par titre / contenu
+- Filtre par **tag**
+
+---
+
+## 9. Le mini-chat
+
+Espace de discussion communautaire **réservé aux membres connectés**.
+
+### Caractéristiques
+
+- Affiche les **10 derniers messages**
+- Rafraîchissement automatique
+- Limite de **300 caractères** par message
+- Possibilité de changer son **pseudo** affiché (différent du login)
+- Modération admin
+
+### Envoyer un message
+
+1. Aller sur la page **"Mini-chat"** (accessible depuis la navigation, membres seulement)
+2. Taper son message
+3. Cliquer sur "Envoyer"
+
+---
+
+## 10. Messagerie privée
+
+Envoyez des messages privés à d'autres membres.
 
 ### Démarrer une conversation
 
-Trois façons :
-- **Depuis la messagerie** : bouton "Nouveau message" → rechercher un membre par login/prénom/nom
-- **Depuis un commentaire de blog** : lien "message" à côté du pseudo de l'auteur
-- **Depuis le mini-chat** : lien "message" à côté du pseudo
+1. Aller sur **"Messages"**
+2. Cliquer sur **"Nouveau message"**
+3. Choisir le destinataire (auto-complétion par login)
+4. Taper votre message
+5. Envoyer
 
-### Dans une conversation
+### Conversation
 
-- Fil chronologique style WhatsApp (vos messages à droite, les siens à gauche)
-- Indicateur "lu" sur vos messages quand l'autre les a consultés
-- Possibilité d'envoyer une réponse directement depuis le fil
+Chaque conversation est une page dédiée avec l'historique complet.
+
+Vous recevez une **notification** quand quelqu'un vous écrit.
 
 ### Bloquer un membre
 
-Dans une conversation, menu **⋮ → Bloquer ce membre** :
-- Il ne pourra plus vous envoyer de message
-- Le blocage est **unidirectionnel** (vous pouvez le débloquer à tout moment)
-- Un admin peut toujours vous écrire (modération)
-
-### Supprimer une conversation
-
-Menu **⋮ → Supprimer la conversation** : efface tous les messages des deux côtés. **Irréversible.**
-
-### Notifications
-
-Quand vous recevez un MP :
-- L'icône ✉️ affiche un badge rouge avec le nombre de non lus
-- Une notification apparaît aussi dans la cloche 🔔
-- Au clic, vous arrivez directement dans le fil concerné
+Si vous ne voulez plus recevoir de messages d'un membre, vous pouvez le **bloquer** depuis la fiche conversation.
 
 ---
 
-## 8. Administration
+## 11. Administration
 
-L'espace administrateur (**Menu utilisateur → Administration**) regroupe :
+### Accès
 
-### 📊 Tableau de bord
-Vue d'ensemble : KPI principaux, graphique CA 30 jours, alerte stock bas.
+Réservé aux comptes ayant le statut `admin`.
 
-### 👥 Membres
-- Liste avec recherche, filtres (Actifs / Bloqués / Anonymisés / Admin)
-- Fiche détaillée : profil + commandes + commentaires + connexions
-- Actions : Bloquer / Débloquer / Promouvoir admin / Dégrader
-- Sécurité : impossible de modifier votre propre compte
+URL : `/admin/` (redirection vers le dashboard si connecté).
 
-### 📦 Articles & Stock
-- CRUD complet avec upload d'image
-- Soft delete (dispo = 0) pour préserver l'historique des commandes
+### Dashboard
 
-### 📂 Catégories
-- CRUD complet (création/édition/suppression)
-- Une catégorie ne peut être supprimée que si elle est vide
+Le dashboard présente :
+- **4 KPI** : commandes du mois, CA du mois, nouveaux membres, articles vendus
+- **14 sections de gestion** (cartes cliquables)
 
-### 🛒 Commandes
-- Liste de toutes les commandes
-- Changement de statut (le client est notifié automatiquement)
+### Sections de gestion
 
-### 📰 Billets de blog
-- Création/édition avec éditeur Markdown
-- Gestion des tags
-- Aperçu en direct
+| Section | Actions possibles |
+|---|---|
+| **Membres** | Liste, recherche, fiche détaillée, modifier données, reset mdp, anonymiser, bloquer, promouvoir admin, vérifier email |
+| **Articles & Stock** | CRUD complet, prix, image, tags, stock |
+| **Catégories** | CRUD + activer/désactiver |
+| **Commandes** | Liste filtrée (statut, dates, recherche), changer statut, export CSV, pagination |
+| **Billets de blog** | CRUD + résumé + image + tags |
+| **Codes promo** | CRUD complet avec quotas, dates, types |
+| **Frais de port** | CRUD par pays/tranche |
+| **Tags** | CRUD pour catégoriser articles et billets |
+| **Statistiques** | Top articles, top membres, connexions, recherches |
+| **Audit log** | Journal de toutes les actions admin |
+| **Sécurité & Maintenance** | État sécurité + purge données anciennes |
+| **Corbeille** | Restauration de billets et commentaires supprimés |
 
-### 🎟️ Codes promo
-- Activation / désactivation
-- Suivi des utilisations
+### Audit log
 
-### 🚚 Frais de port
-- Grille de livraison par pays
-- Activation par option (Standard, Express, etc.)
+Chaque action admin est tracée avec :
+- Date / heure
+- Admin auteur (qui)
+- Action effectuée (quoi)
+- Entité concernée
+- Détails (JSON)
 
-### 🏆 Tops & classements
-- Top articles (vendus / vus / notés)
-- Top membres (acheteurs / blogueurs)
-- Alertes stock bas
+Permet la **traçabilité RGPD** complète.
 
-### 📊 Statistiques de connexion
-- KPI 24h / 7j / 30j
-- Graphique d'activité sur 30 jours
-- Top 10 membres les plus connectés
+### Anonymisation RGPD d'un membre
 
-### 🔍 Recherches utilisateurs
-- Top termes recherchés
-- Recherches sans résultat (opportunités produit/contenu)
+Procédure :
+1. Aller sur la fiche du membre
+2. Cliquer sur **"Anonymiser (RGPD)"**
+3. Une modale s'ouvre avec la liste des conséquences
+4. **Retaper exactement le login** du membre pour confirmer
+5. Cliquer sur "Anonymiser définitivement"
 
-### 📝 Journal d'audit
-- Toutes les actions sensibles tracées
-- Filtres : action, membre, entité, période
-- Détails JSON consultables
-
-### 🔒 Sécurité & Maintenance
-- État de la configuration (DEV_MODE, HTTPS, cookies, etc.)
-- Liste des headers HTTP envoyés
-- Purge des données anciennes (RGPD)
-
-### 🗑️ Corbeille
-- Restauration des billets et commentaires supprimés
+Conséquences :
+- Nom, prénom, email, login remplacés par des valeurs aléatoires
+- Mot de passe écrasé (membre ne peut plus se connecter)
+- Avatar supprimé, adresses supprimées
+- Commandes conservées (obligations comptables) mais anonymes
+- Action **IRRÉVERSIBLE**
 
 ---
 
-## 9. FAQ
+## 12. FAQ
 
-### Le paiement est-il réel ?
-**Non.** C'est un paiement simulé pour les besoins du TFM. Aucune vraie carte n'est requise. Une bannière le rappelle sur la page de commande.
+### J'ai oublié mon mot de passe
 
-### Mon panier a disparu après reconnexion, normal ?
-**Oui.** Le cahier des charges précise : *« panier persistant jusqu'à la prochaine connexion »*. Le panier est volontairement vidé à chaque nouvelle session.
+Sur la page de connexion, cliquer sur **"Mot de passe oublié ?"** près du champ.
 
-### Quels formats d'image sont acceptés ?
-Uniquement **.gif**, **.jpg** et **.jpeg**, 5 Mo max. Cette restriction stricte protège contre les uploads malveillants.
+Un email avec un lien de réinitialisation vous sera envoyé.
 
-### Pourquoi je ne peux pas noter un article ?
-Vous devez avoir **acheté** l'article au moins une fois pour pouvoir le noter. C'est un système d'avis vérifiés.
+Le lien est valide **24 heures**.
 
-### Comment savoir si une commande a été expédiée ?
-Vous recevez une **notification dans la cloche** dès que l'admin change le statut. Cliquez dessus pour voir la facture mise à jour.
+### Je n'arrive pas à passer commande
 
-### Puis-je récupérer mon compte après suppression ?
-**Non.** L'anonymisation est irréversible. Vos commandes restent enregistrées sous "Utilisateur supprimé" pour conformité comptable, mais vous ne pouvez plus accéder au compte.
+Vérifiez que :
+1. Vous êtes **connecté** en tant que membre
+2. Vous avez au moins **une adresse** enregistrée
+3. Tous les articles du panier sont **en stock**
+4. Vous avez accepté les **conditions générales** lors de la commande
 
-### Pourquoi le site bloque mes connexions ?
-Après **5 mauvais mots de passe** sur le même login → blocage 15 min.
-Après **10 tentatives** d'une même IP → blocage 15 min de toute connexion depuis cette IP.
+### Mon compte est bloqué
 
-C'est une protection anti brute-force.
+Causes possibles :
+- Trop de tentatives de connexion ratées (déblocage automatique après 30 min)
+- Blocage admin (contacter le support)
+
+### Comment supprimer mon compte ?
+
+Conformément au RGPD, contactez le support (lien dans le footer) pour demander l'anonymisation de votre compte.
+
+### Le mini-chat n'apparaît pas
+
+Le mini-chat est réservé aux **membres connectés**. Si vous êtes connecté et qu'il n'apparaît pas, vider le cache (Ctrl+F5).
+
+### Je ne reçois pas les notifications
+
+Les notifications sont **internes** au site (pas d'email). Elles apparaissent dans :
+- Le menu utilisateur (badge avec compteur)
+- La page `/notifications.php`
+
+### Comment changer mon pseudo dans le mini-chat ?
+
+Sur la page mini-chat, un champ "Pseudo affiché" permet de personnaliser le nom affiché (différent du login).
+
+### Combien d'articles puis-je comparer ?
+
+Maximum **4 articles** dans le comparateur. Au-delà, un message d'erreur s'affiche.
+
+### Que se passe-t-il si un article que je compare est supprimé ?
+
+Il disparaît automatiquement du comparateur lors du prochain affichage.
 
 ---
 
-*Manuel utilisateur — Version finale (étape 9, mai 2026).*
+## Support
+
+En cas de problème non couvert par cette FAQ, contactez le support via la page [Mentions légales](/mentions_legales.php).
