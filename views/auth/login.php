@@ -46,6 +46,12 @@ require_once INCLUDES_PATH . '/header.php';
             Se connecter
         </button>
 
+        <p class="text-center text-sm">
+            <a href="<?= url('/mdp_oublie.php') ?>" class="text-gray-600 hover:text-primary-600 hover:underline">
+                Mot de passe oublié ?
+            </a>
+        </p>
+
         <p class="text-center text-sm text-gray-600">
             Pas encore membre ?
             <a href="<?= url('/inscription.php') ?>" class="text-primary-600 hover:underline font-medium">

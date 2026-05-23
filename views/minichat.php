@@ -29,6 +29,59 @@ $nbAffiches  = Minichat::nbAffiches();
         </p>
     </div>
 
+
+    <!-- ==============================================================
+         CARTE — Pseudo de session (cahier des charges)
+    =============================================================== -->
+    <?php if ($pseudoVerrouille): ?>
+        <!-- Pseudo verrouillé : affichage info -->
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+            <svg class="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+            <div class="flex-1">
+                <p class="text-sm text-gray-700">
+                    Vous postez en tant que <strong class="text-gray-900"><?= h($pseudoSession) ?></strong>
+                    pour toute cette session.
+                </p>
+                <p class="text-xs text-gray-500 mt-1">
+                    💡 Le pseudo est verrouillé pour éviter la confusion dans le chat.
+                    Pour en choisir un autre, déconnectez-vous puis reconnectez-vous.
+                </p>
+            </div>
+        </div>
+    <?php else: ?>
+        <!-- Pseudo libre : permettre le choix (1 fois) -->
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <form method="post" class="flex flex-wrap items-end gap-3">
+                <?= Csrf::champ() ?>
+                <input type="hidden" name="action" value="changer_pseudo">
+
+                <div class="flex-1 min-w-[200px]">
+                    <label for="pseudo_session" class="block text-xs font-semibold text-blue-900 mb-1 uppercase tracking-wider">
+                        Votre pseudo pour cette session
+                    </label>
+                    <input type="text" id="pseudo_session" name="pseudo"
+                           value="<?= h($pseudoSession) ?>"
+                           maxlength="50" required
+                           class="w-full px-4 py-2 bg-white border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition">
+                    <p class="text-xs text-blue-700 mt-1">
+                        💡 Choisissez votre pseudo pour le mini-chat.
+                        <strong>Une fois choisi, il sera verrouillé jusqu'à votre déconnexion.</strong>
+                    </p>
+                </div>
+
+                <button type="submit"
+                        data-confirm="Définir votre pseudo pour cette session ? Vous ne pourrez plus le changer avant la déconnexion."
+                        class="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition shadow-sm">
+                    Valider mon pseudo
+                </button>
+            </form>
+        </div>
+    <?php endif; ?>
+
+
     <!-- ==============================================================
          CARTE — Liste des messages
     =============================================================== -->
@@ -69,11 +122,24 @@ $nbAffiches  = Minichat::nbAffiches();
 
                         <!-- Contenu -->
                         <div class="flex-1 min-w-0">
-                            <!-- Ligne du dessus : nom + date + bouton supprimer -->
+                            <!-- Ligne du dessus : pseudo + date + bouton supprimer -->
                             <div class="flex items-baseline gap-2 flex-wrap">
                                 <span class="font-semibold text-gray-900 text-sm">
-                                    <?= h($m['prenom']) ?> <?= h($m['nom']) ?>
+                                    <?= h($m['pseudo'] ?? $m['login']) ?>
                                 </span>
+
+                                <?php
+                                // Visible UNIQUEMENT par les administrateurs :
+                                // affiche le vrai login derrière le pseudo (modération).
+                                // Le pseudo a beau être différent du login, l'admin
+                                // peut toujours identifier qui est derrière.
+                                if (Auth::estAdmin() && ($m['pseudo'] ?? '') !== $m['login']):
+                                ?>
+                                    <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-mono"
+                                          title="Login réel (visible uniquement par l'administrateur)">
+                                        @<?= h($m['login']) ?>
+                                    </span>
+                                <?php endif; ?>
 
                                 <?php if ($m['statut'] === 'admin'): ?>
                                     <span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-semibold uppercase">
@@ -84,6 +150,17 @@ $nbAffiches  = Minichat::nbAffiches();
                                 <span class="text-xs text-gray-500">
                                     <?= h(format_date_relative($m['date_message'])) ?>
                                 </span>
+
+                                <?php if (!$estAuteur): ?>
+                                    <a href="<?= url('/messages_nouveau.php?to=' . (int)$m['id_membre']) ?>"
+                                       class="text-[10px] text-primary-600 hover:underline flex items-center gap-1" title="Envoyer un message privé">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                        </svg>
+                                        message
+                                    </a>
+                                <?php endif; ?>
 
                                 <?php if ($peutSupprimer): ?>
                                     <form method="post" action="<?= url('/minichat_supprimer.php') ?>"
@@ -132,6 +209,7 @@ $nbAffiches  = Minichat::nbAffiches();
 
         <form method="post" action="<?= url('/minichat.php') ?>" class="space-y-3">
             <?= Csrf::champ() ?>
+            <input type="hidden" name="action" value="message">
 
             <div class="flex gap-3 items-start">
                 <!-- Avatar de l'auteur -->
@@ -141,6 +219,9 @@ $nbAffiches  = Minichat::nbAffiches();
 
                 <!-- Zone de saisie -->
                 <div class="flex-1">
+                    <p class="text-xs text-blue-700 mb-2">
+                        Vous postez en tant que <strong><?= h($pseudoSession) ?></strong>
+                    </p>
                     <textarea id="message" name="message" required
                               maxlength="<?= (int)$longueurMax ?>"
                               rows="2"

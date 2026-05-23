@@ -350,6 +350,48 @@ class Membre
     }
 
     /**
+     * Version administrateur de la mise à jour.
+     * En plus des champs de base, permet de modifier le login et email_verifie.
+     * À utiliser uniquement depuis l'espace admin.
+     *
+     * @param int   $idMembre   Membre à modifier
+     * @param array $donnees    Clés : nom, prenom, date_naissance, email, login, email_verifie
+     * @param int   $idAdmin    ID de l'admin qui effectue l'action
+     * @return bool
+     */
+    public static function mettreAJourAdmin(int $idMembre, array $donnees, int $idAdmin): bool
+    {
+        $req = Db::pdo()->prepare(
+            "UPDATE membre
+             SET nom = ?, prenom = ?, date_naissance = ?,
+                 email = ?, login = ?, email_verifie = ?
+             WHERE id_membre = ?"
+        );
+
+        $resultat = $req->execute([
+            $donnees['nom'],
+            $donnees['prenom'],
+            $donnees['date_naissance'],
+            $donnees['email'],
+            $donnees['login'],
+            !empty($donnees['email_verifie']) ? 1 : 0,
+            $idMembre,
+        ]);
+
+        if ($resultat && class_exists('AuditLog')) {
+            AuditLog::enregistrer(
+                'membre.admin_modifier',
+                $idAdmin,
+                'membre',
+                $idMembre,
+                ['champs' => array_keys($donnees)]
+            );
+        }
+
+        return $resultat;
+    }
+
+    /**
      * Change le mot de passe d'un membre.
      *
      * @param int    $idMembre

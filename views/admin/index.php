@@ -159,6 +159,14 @@ $stockBas = Stats::articlesStockBas(5);
             <p class="text-sm text-gray-600">Catalogue, stock, prix, images</p>
         </a>
 
+        <a href="<?= url('/admin/categories.php') ?>" class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition group">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center group-hover:bg-primary-200 transition">📂</div>
+                <h3 class="font-semibold text-gray-900 group-hover:text-primary-600 transition">Catégories</h3>
+            </div>
+            <p class="text-sm text-gray-600">Organiser le catalogue par catégorie</p>
+        </a>
+
         <a href="<?= url('/admin/commandes.php') ?>" class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition group">
             <div class="flex items-center gap-3 mb-2">
                 <div class="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center group-hover:bg-primary-200 transition">🛒</div>
@@ -191,6 +199,14 @@ $stockBas = Stats::articlesStockBas(5);
             <p class="text-sm text-gray-600">Grille de livraison par pays</p>
         </a>
 
+        <a href="<?= url('/admin/tags.php') ?>" class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition group">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center group-hover:bg-primary-200 transition">🏷️</div>
+                <h3 class="font-semibold text-gray-900 group-hover:text-primary-600 transition">Tags</h3>
+            </div>
+            <p class="text-sm text-gray-600">Étiquettes pour les billets de blog</p>
+        </a>
+
         <a href="<?= url('/admin/stats_top.php') ?>" class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition group">
             <div class="flex items-center gap-3 mb-2">
                 <div class="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center group-hover:bg-primary-200 transition">🏆</div>
@@ -221,6 +237,14 @@ $stockBas = Stats::articlesStockBas(5);
                 <h3 class="font-semibold text-gray-900 group-hover:text-primary-600 transition">Audit log</h3>
             </div>
             <p class="text-sm text-gray-600">Journal des actions admin et système</p>
+        </a>
+
+        <a href="<?= url('/admin/securite.php') ?>" class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition group">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 transition">🔒</div>
+                <h3 class="font-semibold text-gray-900 group-hover:text-red-600 transition">Sécurité &amp; Maintenance</h3>
+            </div>
+            <p class="text-sm text-gray-600">État de la sécurité + purge des données anciennes</p>
         </a>
 
         <a href="<?= url('/admin/corbeille.php') ?>" class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition group">

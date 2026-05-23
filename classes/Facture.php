@@ -241,17 +241,97 @@ class Facture
     /**
      * Liste toutes les commandes (admin).
      */
-    public static function listerToutes(): array
+    /**
+     * Liste toutes les commandes (admin) avec filtres et pagination.
+     *
+     * @param array $opts
+     *   - 'statut'    : id_statut pour filtrer (0 = tous)
+     *   - 'recherche' : recherche dans login/prenom/nom du membre
+     *   - 'date_min'  : date min (YYYY-MM-DD)
+     *   - 'date_max'  : date max (YYYY-MM-DD)
+     *   - 'page'      : page courante (défaut 1)
+     *   - 'parPage'   : nombre par page (défaut 20)
+     *
+     * @return array ['commandes' => [...], 'total' => N, 'totalPages' => N, 'page' => N]
+     *
+     * Note de compatibilité : ancien appel `listerToutes()` sans args
+     * retourne directement le tableau de commandes (legacy).
+     */
+    public static function listerToutes(array $opts = []): array
     {
-        return Db::pdo()->query(
+        $statut    = (int)($opts['statut']    ?? 0);
+        $recherche = trim($opts['recherche']  ?? '');
+        $dateMin   = trim($opts['date_min']   ?? '');
+        $dateMax   = trim($opts['date_max']   ?? '');
+        $page      = max(1, (int)($opts['page']    ?? 1));
+        $parPage   = max(1, (int)($opts['parPage'] ?? 20));
+        $modeListe = !empty($opts);  // appelée avec args → mode pagination
+
+        $where  = [];
+        $params = [];
+
+        if ($statut > 0) {
+            $where[]  = 'f.id_statut = ?';
+            $params[] = $statut;
+        }
+        if ($recherche !== '') {
+            $where[]  = '(m.login LIKE ? OR m.nom LIKE ? OR m.prenom LIKE ? OR f.id_facture = ?)';
+            $like = '%' . $recherche . '%';
+            $params[] = $like;
+            $params[] = $like;
+            $params[] = $like;
+            $params[] = (int)$recherche;  // permet aussi recherche par id
+        }
+        if ($dateMin !== '') {
+            $where[]  = 'f.date_achat >= ?';
+            $params[] = $dateMin . ' 00:00:00';
+        }
+        if ($dateMax !== '') {
+            $where[]  = 'f.date_achat <= ?';
+            $params[] = $dateMax . ' 23:59:59';
+        }
+
+        $clauseWhere = $where ? ' WHERE ' . implode(' AND ', $where) : '';
+
+        // Count total
+        $reqCount = Db::pdo()->prepare(
+            "SELECT COUNT(*)
+             FROM achat_facture f
+             INNER JOIN statut_commande s ON s.id_statut = f.id_statut
+             INNER JOIN membre m ON m.id_membre = f.id_membre"
+            . $clauseWhere
+        );
+        $reqCount->execute($params);
+        $total = (int)$reqCount->fetchColumn();
+
+        // Liste paginée
+        $offset = ($page - 1) * $parPage;
+        $req = Db::pdo()->prepare(
             "SELECT f.*, s.code AS statut_code, s.nom AS statut_nom, s.couleur AS statut_couleur,
                     m.prenom, m.nom, m.login, m.date_anonymisation,
                     (SELECT COUNT(*) FROM ligne_facture WHERE id_facture = f.id_facture) AS nb_articles
              FROM achat_facture f
              INNER JOIN statut_commande s ON s.id_statut = f.id_statut
-             INNER JOIN membre m ON m.id_membre = f.id_membre
-             ORDER BY f.date_achat DESC"
-        )->fetchAll();
+             INNER JOIN membre m ON m.id_membre = f.id_membre"
+            . $clauseWhere
+            . " ORDER BY f.date_achat DESC
+                LIMIT $parPage OFFSET $offset"
+        );
+        $req->execute($params);
+        $commandes = $req->fetchAll();
+
+        // Compatibilité ascendante : si appel sans args, on retourne juste le tableau
+        if (!$modeListe) {
+            return $commandes;
+        }
+
+        return [
+            'commandes'  => $commandes,
+            'total'      => $total,
+            'totalPages' => (int)ceil($total / $parPage),
+            'page'       => $page,
+            'parPage'    => $parPage,
+        ];
     }
 
     /**
@@ -285,13 +365,30 @@ class Facture
 
     /**
      * Change le statut d'une commande (admin).
+     * Crée automatiquement une notification pour le client.
      */
     public static function changerStatut(int $idFacture, int $idStatut): bool
     {
         $req = Db::pdo()->prepare(
             "UPDATE achat_facture SET id_statut = ? WHERE id_facture = ?"
         );
-        return $req->execute([$idStatut, $idFacture]);
+        $ok = $req->execute([$idStatut, $idFacture]);
+
+        if ($ok) {
+            // Récupérer les infos pour la notification
+            $infos = self::trouverParId($idFacture);
+            if ($infos && class_exists('Notification')) {
+                Notification::creer(
+                    (int)$infos['id_membre'],
+                    'commande.statut',
+                    'Votre commande ' . $infos['reference'],
+                    'Le statut de votre commande est maintenant : ' . $infos['statut_nom'],
+                    '/facture.php?id=' . $idFacture
+                );
+            }
+        }
+
+        return $ok;
     }
 
     /**

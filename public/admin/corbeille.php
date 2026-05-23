@@ -24,11 +24,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'restaurer_billet') {
         $idBillet = (int)($_POST['id_billet'] ?? 0);
         if (Billet::restaurer($idBillet)) {
+            AuditLog::enregistrer('billet.restaurer', Auth::id(), 'billet', $idBillet);
             Flash::succes('Billet restauré.');
         }
     } elseif ($action === 'restaurer_commentaire') {
         $idCommentaire = (int)($_POST['id_commentaire'] ?? 0);
         if (Commentaire::restaurer($idCommentaire)) {
+            AuditLog::enregistrer('commentaire.restaurer', Auth::id(), 'commentaire', $idCommentaire);
             Flash::succes('Commentaire restauré.');
         }
     }

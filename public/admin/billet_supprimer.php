@@ -34,6 +34,7 @@ if ($idBillet <= 0) {
 
 // Soft delete
 Billet::supprimer($idBillet, Auth::id());
+AuditLog::enregistrer('billet.supprimer', Auth::id(), 'billet', $idBillet);
 
 Flash::succes('Billet supprimé (visible dans la corbeille pour restauration).');
 header('Location: ' . url('/admin/billets.php'));

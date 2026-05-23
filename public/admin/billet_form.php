@@ -6,6 +6,9 @@
  *
  * - Sans paramètre id → création
  * - Avec ?id=X        → édition du billet X
+ *
+ * Supporte : titre, corps (Markdown), résumé court, image illustrative,
+ * tags multiples.
  * ---------------------------------------------------------------------
  */
 
@@ -32,9 +35,11 @@ if ($modeEdition) {
 
 // Variables pour pré-remplissage du formulaire
 $donnees = [
-    'titre' => $modeEdition ? $billet['titre'] : '',
-    'corps' => $modeEdition ? $billet['corps'] : '',
+    'titre'  => $modeEdition ? $billet['titre']  : '',
+    'corps'  => $modeEdition ? $billet['corps']  : '',
+    'resume' => $modeEdition ? ($billet['resume'] ?? '') : '',
 ];
+$imageActuelle = $modeEdition ? ($billet['image'] ?? null) : null;
 $idsTagsSelectionnes = $idsTagsActuels;
 $erreurs = [];
 
@@ -51,9 +56,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $donnees['titre']     = trim($_POST['titre'] ?? '');
-    $donnees['corps']     = trim($_POST['corps'] ?? '');
+    $donnees['titre']     = trim($_POST['titre']  ?? '');
+    $donnees['corps']     = trim($_POST['corps']  ?? '');
+    $donnees['resume']    = trim($_POST['resume'] ?? '');
     $idsTagsSelectionnes  = array_map('intval', $_POST['tags'] ?? []);
+    $supprimerImage       = !empty($_POST['supprimer_image']);
 
     // Validation
     if ($donnees['titre'] === '') {
@@ -66,18 +73,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erreurs['corps'] = 'Le contenu est obligatoire.';
     }
 
+    if (mb_strlen($donnees['resume']) > 500) {
+        $erreurs['resume'] = 'Le résumé ne doit pas dépasser 500 caractères.';
+    }
+
+    // -----------------------------------------------------------------
+    // Gestion de l'image illustrative (optionnelle)
+    // -----------------------------------------------------------------
+    $nouvelleImage = $imageActuelle;
+    $uploadEffectue = false;
+
+    if (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
+        $res = Upload::image($_FILES['image'], UPLOADS_PATH . '/articles');
+        if (!$res['succes']) {
+            $erreurs['image'] = $res['erreur'];
+        } else {
+            // Supprimer l'ancienne image si remplacement
+            if ($imageActuelle) {
+                Upload::supprimer($imageActuelle, UPLOADS_PATH . '/articles');
+            }
+            $nouvelleImage = $res['fichier'];
+            $uploadEffectue = true;
+        }
+    } elseif ($supprimerImage && $imageActuelle) {
+        // Suppression demandée explicitement
+        Upload::supprimer($imageActuelle, UPLOADS_PATH . '/articles');
+        $nouvelleImage = null;
+    }
+
     if (empty($erreurs)) {
         try {
             if ($modeEdition) {
-                Billet::modifier($idBillet, $donnees['titre'], $donnees['corps'], $idsTagsSelectionnes);
+                Billet::modifier(
+                    $idBillet,
+                    $donnees['titre'],
+                    $donnees['corps'],
+                    $idsTagsSelectionnes,
+                    $donnees['resume'],
+                    $nouvelleImage
+                );
+                AuditLog::enregistrer('billet.modifier', Auth::id(), 'billet', $idBillet, [
+                    'titre' => $donnees['titre'],
+                ]);
                 Flash::succes('Billet mis à jour.');
             } else {
-                $idBillet = Billet::creer(Auth::id(), $donnees['titre'], $donnees['corps'], $idsTagsSelectionnes);
+                $idBillet = Billet::creer(
+                    Auth::id(),
+                    $donnees['titre'],
+                    $donnees['corps'],
+                    $idsTagsSelectionnes,
+                    $donnees['resume'],
+                    $nouvelleImage
+                );
+                AuditLog::enregistrer('billet.creer', Auth::id(), 'billet', $idBillet, [
+                    'titre' => $donnees['titre'],
+                ]);
                 Flash::succes('Billet créé avec succès.');
             }
             header('Location: ' . url('/admin/billets.php'));
             exit;
         } catch (Throwable $e) {
+            // En cas d'erreur, supprimer l'image qui aurait été uploadée
+            if ($uploadEffectue) {
+                Upload::supprimer($nouvelleImage, UPLOADS_PATH . '/articles');
+            }
             $erreurs['general'] = 'Erreur lors de l\'enregistrement.';
             if (DEV_MODE) {
                 $erreurs['general'] .= ' [' . $e->getMessage() . ']';

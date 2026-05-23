@@ -77,9 +77,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             if ($modeEdition) {
                 Article::modifier($idArticle, $donnees);
+                AuditLog::enregistrer('article.modifier', Auth::id(), 'article', $idArticle, [
+                    'nom' => $donnees['nom'],
+                    'prix' => $donnees['prix'] ?? null,
+                ]);
                 Flash::succes('Article mis à jour.');
             } else {
                 $idArticle = Article::creer($donnees);
+                AuditLog::enregistrer('article.creer', Auth::id(), 'article', $idArticle, [
+                    'nom' => $donnees['nom'],
+                    'prix' => $donnees['prix'] ?? null,
+                ]);
                 Flash::succes('Article créé avec succès.');
             }
             header('Location: ' . url('/admin/articles.php'));

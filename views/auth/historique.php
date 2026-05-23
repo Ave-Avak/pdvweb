@@ -19,10 +19,18 @@ require_once INCLUDES_PATH . '/header.php';
 
     <?php if (empty($commandes)): ?>
         <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <p class="text-gray-600 mb-4">Vous n'avez pas encore passé de commande.</p>
+            <div class="inline-flex w-20 h-20 bg-primary-50 rounded-full items-center justify-center mb-4">
+                <svg class="w-10 h-10 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                          d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                </svg>
+            </div>
+            <h2 class="text-xl font-semibold text-gray-900 mb-2">Aucun achat pour le moment</h2>
+            <p class="text-gray-600 mb-6">Découvrez notre catalogue et passez votre première commande.</p>
             <a href="<?= url('/catalogue.php') ?>"
-               class="inline-block px-5 py-2 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition">
-                Voir le catalogue
+               class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition shadow-sm">
+                Découvrir le catalogue
+                <span aria-hidden="true">→</span>
             </a>
         </div>
     <?php else: ?>

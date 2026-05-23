@@ -37,7 +37,7 @@ class Minichat
     public static function listerDerniers(int $limite = 10): array
     {
         $req = Db::pdo()->prepare(
-            "SELECT m.id_message, m.message, m.date_message,
+            "SELECT m.id_message, m.message, m.date_message, m.pseudo,
                     u.id_membre, u.prenom, u.nom, u.login, u.avatar, u.statut
              FROM minichat m
              INNER JOIN membre u ON u.id_membre = m.id_membre
@@ -74,15 +74,16 @@ class Minichat
      *
      * @param int    $idMembre
      * @param string $message
+     * @param string $pseudo  Pseudo choisi par le membre pour cette session
      * @return int  ID du message créé
      */
-    public static function creer(int $idMembre, string $message): int
+    public static function creer(int $idMembre, string $message, string $pseudo): int
     {
         $pdo = Db::pdo();
         $req = $pdo->prepare(
-            "INSERT INTO minichat (id_membre, message) VALUES (?, ?)"
+            "INSERT INTO minichat (id_membre, message, pseudo) VALUES (?, ?, ?)"
         );
-        $req->execute([$idMembre, $message]);
+        $req->execute([$idMembre, $message, $pseudo]);
         return (int)$pdo->lastInsertId();
     }
 

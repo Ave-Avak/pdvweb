@@ -151,6 +151,31 @@ require_once INCLUDES_PATH . '/header.php';
 
 
     <!-- ==============================================================
+         CARTE 2bis — Adresse postale (cahier des charges)
+    =============================================================== -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8 mb-6">
+        <div class="flex items-start justify-between gap-3 flex-wrap mb-2">
+            <div>
+                <h2 class="text-xl font-bold text-gray-900 mb-1">Adresse postale</h2>
+                <p class="text-sm text-gray-600">
+                    Gérez vos adresses de livraison et de facturation.
+                </p>
+            </div>
+            <a href="<?= url('/adresses.php') ?>"
+               class="px-4 py-2 bg-primary-600 text-white text-sm font-semibold rounded-lg hover:bg-primary-700 transition shadow-sm flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Gérer mes adresses
+            </a>
+        </div>
+    </div>
+
+
+    <!-- ==============================================================
          CARTE 3 — Sécurité (changement de mot de passe)
     =============================================================== -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8 mb-6">

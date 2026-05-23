@@ -55,10 +55,15 @@
                 </ul>
             </div>
 
-            <!-- Colonne 4 : contact -->
+            <!-- Colonne 4 : contact + légal -->
             <div>
-                <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Contact</h3>
+                <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Informations</h3>
                 <ul class="space-y-2 text-sm text-gray-600">
+                    <li>
+                        <a href="<?= url('/mentions_legales.php') ?>" class="hover:text-primary-600">
+                            Mentions légales & RGPD
+                        </a>
+                    </li>
                     <li>
                         <a href="mailto:<?= h(parametre('site.email_contact', 'contact@pdvweb.local')) ?>"
                            class="hover:text-primary-600">
@@ -85,7 +90,7 @@
 
 
 <!-- JS perso (chargé en bas pour ne pas bloquer le rendu) -->
-<script src="<?= asset('assets/js/main.js') ?>"></script>
+<script src="<?= asset('assets/js/main.js') ?>?v=<?= @filemtime(__DIR__ . '/../public/assets/js/main.js') ?: time() ?>"></script>
 
 </body>
 </html>

@@ -260,7 +260,7 @@ class Stats
     {
         $req = Db::pdo()->prepare(
             "SELECT m.id_membre, m.login, m.prenom, m.nom, m.avatar, m.date_anonymisation,
-                    COUNT(c.id_comm) AS nb_commentaires
+                    COUNT(*) AS nb_commentaires
              FROM commentaire c
              INNER JOIN membre m ON m.id_membre = c.id_membre
              WHERE c.date_suppression IS NULL

@@ -38,8 +38,13 @@ if (session_status() === PHP_SESSION_NONE) {
     // Utiliser uniquement les cookies (pas l'URL) pour propager la session
     ini_set('session.use_only_cookies', '1');
 
-    // En production HTTPS, on activerait aussi :
-    // ini_set('session.cookie_secure', '1');
+    // Cookie Secure si HTTPS détecté (anti vol via réseau non chiffré)
+    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+        ini_set('session.cookie_secure', '1');
+    }
+
+    // Renforcer l'entropie de l'ID de session (anti prédiction)
+    ini_set('session.use_strict_mode', '1');
 
     session_start();
 }
@@ -78,3 +83,12 @@ spl_autoload_register(function ($nomClasse) {
 // 4. Chargement des fonctions globales (helpers)
 // -----------------------------------------------------------------
 require_once __DIR__ . '/helpers.php';
+
+
+// -----------------------------------------------------------------
+// 5. Headers HTTP de sécurité (étape 8)
+// -----------------------------------------------------------------
+// Envoyés en début de réponse pour chaque page web.
+// Protection contre XSS, clickjacking, MIME-sniffing, etc.
+// Voir classes/util/Securite.php pour le détail de chaque header.
+Securite::envoyerHeadersSecurite();

@@ -12,6 +12,9 @@ AddDefaultCharset UTF-8
 # Page d'accueil par défaut
 DirectoryIndex index.php index.html
 
+# Page 404 personnalisée
+ErrorDocument 404 /pdvweb/public/404.php
+
 
 # ---------------------------------------------------------------------
 # Sécurité - en-têtes HTTP

@@ -16,6 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && Csrf::verifierRequete()) {
     if ($idFrais > 0) {
         Db::pdo()->prepare("UPDATE frais_port SET actif = 1 - actif WHERE id_frais = ?")
                  ->execute([$idFrais]);
+        AuditLog::enregistrer('frais_port.toggle', Auth::id(), 'frais_port', $idFrais);
         Flash::succes('Grille mise à jour.');
     }
     header('Location: ' . url('/admin/frais_port.php'));

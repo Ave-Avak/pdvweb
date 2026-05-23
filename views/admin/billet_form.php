@@ -32,6 +32,7 @@ require_once INCLUDES_PATH . '/header.php';
     <?php endif; ?>
 
     <form method="post" action="<?= $modeEdition ? url('/admin/billet_form.php?id=' . $idBillet) : url('/admin/billet_form.php') ?>"
+          enctype="multipart/form-data"
           class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8 space-y-5">
         <?= Csrf::champ() ?>
 
@@ -45,6 +46,63 @@ require_once INCLUDES_PATH . '/header.php';
                    class="w-full px-4 py-2 border <?= isset($erreurs['titre']) ? 'border-red-400' : 'border-gray-300' ?> rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
             <?php if (isset($erreurs['titre'])): ?>
                 <p class="text-sm text-red-600 mt-1"><?= h($erreurs['titre']) ?></p>
+            <?php endif; ?>
+        </div>
+
+        <!-- Résumé court (optionnel) -->
+        <div>
+            <label for="resume" class="block text-sm font-medium text-gray-700 mb-1">
+                Résumé <span class="text-gray-400 text-xs font-normal">(optionnel, max 500 caractères)</span>
+            </label>
+            <textarea id="resume" name="resume" maxlength="500" rows="3"
+                      placeholder="Description courte affichée sur la page d'accueil et la liste des billets."
+                      class="w-full px-4 py-2 border <?= isset($erreurs['resume']) ? 'border-red-400' : 'border-gray-300' ?> rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition resize-none"><?= h($donnees['resume']) ?></textarea>
+            <p class="text-xs text-gray-500 mt-1">
+                Si laissé vide, un extrait automatique du contenu sera utilisé.
+            </p>
+            <?php if (isset($erreurs['resume'])): ?>
+                <p class="text-sm text-red-600 mt-1"><?= h($erreurs['resume']) ?></p>
+            <?php endif; ?>
+        </div>
+
+        <!-- Image illustrative (optionnelle) -->
+        <div>
+            <label for="image" class="block text-sm font-medium text-gray-700 mb-1">
+                Image illustrative <span class="text-gray-400 text-xs font-normal">(optionnel)</span>
+            </label>
+
+            <?php if (!empty($imageActuelle)): ?>
+                <div class="mb-3 flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <img src="<?= h(asset_article($imageActuelle)) ?>"
+                         alt="Image actuelle"
+                         class="w-24 h-24 object-cover rounded border border-gray-300">
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-700 font-medium mb-1">Image actuelle</p>
+                        <p class="text-xs text-gray-500 mb-2"><?= h($imageActuelle) ?></p>
+                        <label class="inline-flex items-center gap-2 text-sm text-red-600 cursor-pointer hover:text-red-700">
+                            <input type="checkbox" name="supprimer_image" value="1" class="rounded">
+                            <span>Supprimer cette image</span>
+                        </label>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <input type="file" id="image" name="image"
+                   accept=".gif,.jpg,.jpeg,image/gif,image/jpeg"
+                   class="block w-full text-sm text-gray-700
+                          file:mr-4 file:py-2 file:px-4
+                          file:rounded-md file:border-0
+                          file:text-sm file:font-semibold
+                          file:bg-primary-50 file:text-primary-700
+                          hover:file:bg-primary-100 cursor-pointer">
+            <p class="text-xs text-gray-500 mt-1">
+                Format .gif ou .jpeg, 2 Mo maximum.
+                <?php if (!empty($imageActuelle)): ?>
+                    Téléverser une nouvelle image remplacera l'actuelle.
+                <?php endif; ?>
+            </p>
+            <?php if (isset($erreurs['image'])): ?>
+                <p class="text-sm text-red-600 mt-1"><?= h($erreurs['image']) ?></p>
             <?php endif; ?>
         </div>
 

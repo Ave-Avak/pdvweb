@@ -33,6 +33,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Rate limiting par IP : max 10 tentatives de login / 15 min depuis la même IP
+    // Protège contre un attaquant qui testerait plein de logins différents
+    // (le brute-force par login lui ne bloque qu'un login spécifique).
+    if (Securite::estRateLimited('login_ip', 10, 15)) {
+        Flash::erreur('Trop de tentatives de connexion depuis cette adresse. Réessayez dans 15 minutes.');
+        header('Location: ' . url('/login.php'));
+        exit;
+    }
+
     $login    = trim($_POST['login']     ?? '');
     $motPasse = $_POST['mot_passe'] ?? '';
 
@@ -52,7 +61,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: ' . $urlSuivante);
         exit;
     } else {
-        // Échec : on affiche l'erreur, le login reste rempli (mais pas le mdp)
+        // Échec : on enregistre la tentative dans le compteur IP
+        Securite::enregistrerActionRateLimit('login_ip');
+        // On affiche l'erreur, le login reste rempli (mais pas le mdp)
         Flash::erreur($resultat['erreur']);
     }
 }

@@ -86,4 +86,86 @@ class FraisPort
             "SELECT * FROM frais_port ORDER BY pays, prix"
         )->fetchAll();
     }
+
+    /**
+     * Trouve une grille par son ID (admin, sans contrainte).
+     */
+    public static function trouverParId(int $idFrais): ?array
+    {
+        $req = Db::pdo()->prepare("SELECT * FROM frais_port WHERE id_frais = ?");
+        $req->execute([$idFrais]);
+        $row = $req->fetch();
+        return $row ?: null;
+    }
+
+    /**
+     * Crée une nouvelle grille tarifaire.
+     *
+     * @param array $donnees Clés :
+     *   nom, pays, montant_min_panier, montant_max_panier, prix, delai_jours, actif
+     */
+    public static function creer(array $donnees): int
+    {
+        $pdo = Db::pdo();
+        $req = $pdo->prepare(
+            "INSERT INTO frais_port
+                (nom, pays, montant_min_panier, montant_max_panier,
+                 prix, delai_jours, actif)
+             VALUES (?, ?, ?, ?, ?, ?, ?)"
+        );
+        $req->execute([
+            $donnees['nom'],
+            $donnees['pays'],
+            self::nullSiVide($donnees['montant_min_panier'] ?? null),
+            self::nullSiVide($donnees['montant_max_panier'] ?? null),
+            $donnees['prix'],
+            self::nullSiVide($donnees['delai_jours'] ?? null),
+            isset($donnees['actif']) ? (int)(bool)$donnees['actif'] : 1,
+        ]);
+        return (int)$pdo->lastInsertId();
+    }
+
+    /**
+     * Modifie une grille existante.
+     */
+    public static function modifier(int $idFrais, array $donnees): bool
+    {
+        $req = Db::pdo()->prepare(
+            "UPDATE frais_port
+             SET nom = ?, pays = ?,
+                 montant_min_panier = ?, montant_max_panier = ?,
+                 prix = ?, delai_jours = ?, actif = ?
+             WHERE id_frais = ?"
+        );
+        return $req->execute([
+            $donnees['nom'],
+            $donnees['pays'],
+            self::nullSiVide($donnees['montant_min_panier'] ?? null),
+            self::nullSiVide($donnees['montant_max_panier'] ?? null),
+            $donnees['prix'],
+            self::nullSiVide($donnees['delai_jours'] ?? null),
+            isset($donnees['actif']) ? (int)(bool)$donnees['actif'] : 1,
+            $idFrais,
+        ]);
+    }
+
+    /**
+     * Supprime une grille de frais de port.
+     */
+    public static function supprimer(int $idFrais): bool
+    {
+        $req = Db::pdo()->prepare("DELETE FROM frais_port WHERE id_frais = ?");
+        return $req->execute([$idFrais]);
+    }
+
+    /**
+     * Helper : convertit une chaîne vide / null en NULL SQL.
+     */
+    private static function nullSiVide($valeur)
+    {
+        if ($valeur === null || $valeur === '' || $valeur === false) {
+            return null;
+        }
+        return $valeur;
+    }
 }

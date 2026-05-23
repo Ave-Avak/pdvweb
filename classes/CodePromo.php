@@ -126,4 +126,99 @@ class CodePromo
              ORDER BY cp.actif DESC, cp.date_debut DESC"
         )->fetchAll();
     }
+
+    /**
+     * Trouve un code promo par son ID (admin, peu importe actif/expiré).
+     */
+    public static function trouverParId(int $idCode): ?array
+    {
+        $req = Db::pdo()->prepare("SELECT * FROM code_promo WHERE id_code = ?");
+        $req->execute([$idCode]);
+        $row = $req->fetch();
+        return $row ?: null;
+    }
+
+    /**
+     * Vérifie si un code (chaîne) existe déjà.
+     *
+     * @param string $code
+     * @param int $idIgnore  ID à ignorer (utile en édition)
+     */
+    public static function codeExiste(string $code, int $idIgnore = 0): bool
+    {
+        $req = Db::pdo()->prepare(
+            "SELECT COUNT(*) FROM code_promo WHERE code = ? AND id_code <> ?"
+        );
+        $req->execute([$code, $idIgnore]);
+        return (int)$req->fetchColumn() > 0;
+    }
+
+    /**
+     * Crée un nouveau code promo.
+     *
+     * @param array $donnees Tableau avec les clés :
+     *   code, description, type_remise, valeur, montant_min_panier,
+     *   utilisations_max, utilisations_par_membre, date_debut, date_fin, actif
+     * @return int ID du code créé
+     */
+    public static function creer(array $donnees): int
+    {
+        $pdo = Db::pdo();
+        $req = $pdo->prepare(
+            "INSERT INTO code_promo
+                (code, description, type_remise, valeur, montant_min_panier,
+                 utilisations_max, utilisations_par_membre, date_debut, date_fin, actif)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        );
+        $req->execute([
+            $donnees['code'],
+            $donnees['description'] ?? null,
+            $donnees['type_remise'],
+            $donnees['valeur'],
+            $donnees['montant_min_panier'] ?? 0,
+            $donnees['utilisations_max'] ?? null,
+            $donnees['utilisations_par_membre'] ?? null,
+            $donnees['date_debut'],
+            $donnees['date_fin'],
+            isset($donnees['actif']) ? (int)(bool)$donnees['actif'] : 1,
+        ]);
+        return (int)$pdo->lastInsertId();
+    }
+
+    /**
+     * Modifie un code promo existant.
+     */
+    public static function modifier(int $idCode, array $donnees): bool
+    {
+        $req = Db::pdo()->prepare(
+            "UPDATE code_promo
+             SET code = ?, description = ?, type_remise = ?, valeur = ?,
+                 montant_min_panier = ?, utilisations_max = ?,
+                 utilisations_par_membre = ?, date_debut = ?, date_fin = ?, actif = ?
+             WHERE id_code = ?"
+        );
+        return $req->execute([
+            $donnees['code'],
+            $donnees['description'] ?? null,
+            $donnees['type_remise'],
+            $donnees['valeur'],
+            $donnees['montant_min_panier'] ?? 0,
+            $donnees['utilisations_max'] ?? null,
+            $donnees['utilisations_par_membre'] ?? null,
+            $donnees['date_debut'],
+            $donnees['date_fin'],
+            isset($donnees['actif']) ? (int)(bool)$donnees['actif'] : 1,
+            $idCode,
+        ]);
+    }
+
+    /**
+     * Supprime un code promo.
+     * ON DELETE CASCADE supprime les utilisations associées.
+     */
+    public static function supprimer(int $idCode): bool
+    {
+        $req = Db::pdo()->prepare("DELETE FROM code_promo WHERE id_code = ?");
+        return $req->execute([$idCode]);
+    }
 }

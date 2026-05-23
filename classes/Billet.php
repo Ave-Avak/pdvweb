@@ -129,16 +129,27 @@ class Billet
 
     /**
      * Crée un nouveau billet.
+     *
+     * @param int $idAuteur ID du membre auteur
+     * @param string $titre Titre obligatoire
+     * @param string $corps Corps Markdown obligatoire
+     * @param array $idsTags IDs des tags à associer
+     * @param string|null $resume Résumé court (optionnel)
+     * @param string|null $image Nom de fichier image (optionnel)
+     * @return int ID du billet créé
      */
-    public static function creer(int $idAuteur, string $titre, string $corps, array $idsTags = []): int
+    public static function creer(int $idAuteur, string $titre, string $corps,
+                                  array $idsTags = [], ?string $resume = null,
+                                  ?string $image = null): int
     {
         $pdo = Db::pdo();
         $pdo->beginTransaction();
         try {
             $req = $pdo->prepare(
-                "INSERT INTO billet (id_membre, titre, corps) VALUES (?, ?, ?)"
+                "INSERT INTO billet (id_membre, titre, corps, resume, image)
+                 VALUES (?, ?, ?, ?, ?)"
             );
-            $req->execute([$idAuteur, $titre, $corps]);
+            $req->execute([$idAuteur, $titre, $corps, $resume ?: null, $image ?: null]);
             $idBillet = (int)$pdo->lastInsertId();
 
             self::associerTags($idBillet, $idsTags);
@@ -153,16 +164,22 @@ class Billet
 
     /**
      * Modifie un billet existant.
+     *
+     * @param string|null $resume Résumé court (NULL = ne pas modifier ce champ)
+     * @param string|null $image Image (NULL = ne pas modifier ce champ)
      */
-    public static function modifier(int $idBillet, string $titre, string $corps, array $idsTags = []): bool
+    public static function modifier(int $idBillet, string $titre, string $corps,
+                                     array $idsTags = [], ?string $resume = null,
+                                     ?string $image = null): bool
     {
         $pdo = Db::pdo();
         $pdo->beginTransaction();
         try {
             $req = $pdo->prepare(
-                "UPDATE billet SET titre = ?, corps = ? WHERE id_billet = ?"
+                "UPDATE billet SET titre = ?, corps = ?, resume = ?, image = ?
+                 WHERE id_billet = ?"
             );
-            $req->execute([$titre, $corps, $idBillet]);
+            $req->execute([$titre, $corps, $resume ?: null, $image ?: null, $idBillet]);
 
             $pdo->prepare("DELETE FROM billet_tag WHERE id_billet = ?")->execute([$idBillet]);
             self::associerTags($idBillet, $idsTags);

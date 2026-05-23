@@ -25,6 +25,11 @@ $donnees = [
     'date_naissance' => '',
     'email' => '',
     'login' => '',
+    'rue' => '',
+    'numero' => '',
+    'cp' => '',
+    'ville' => '',
+    'pays' => 'Belgique',
 ];
 $erreurs = [];
 
@@ -53,6 +58,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'date_naissance' => trim($_POST['date_naissance'] ?? ''),
         'email'          => trim($_POST['email']          ?? ''),
         'login'          => trim($_POST['login']          ?? ''),
+        // Adresse postale (exigée par le cahier des charges)
+        'rue'            => trim($_POST['rue']            ?? ''),
+        'numero'         => trim($_POST['numero']         ?? ''),
+        'cp'             => trim($_POST['cp']             ?? ''),
+        'ville'          => trim($_POST['ville']          ?? ''),
+        'pays'           => trim($_POST['pays']           ?? 'Belgique'),
     ];
     $motPasse        = $_POST['mot_passe']         ?? '';
     $motPasseConfirm = $_POST['mot_passe_confirm'] ?? '';
@@ -117,6 +128,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erreurs['mot_passe_confirm'] = 'Les mots de passe ne correspondent pas.';
     }
 
+    // Adresse postale (cahier des charges : obligatoire à l'inscription)
+    if ($donnees['rue'] === '') {
+        $erreurs['rue'] = 'La rue est obligatoire.';
+    }
+    if ($donnees['numero'] === '') {
+        $erreurs['numero'] = 'Le numéro est obligatoire.';
+    }
+    if ($donnees['cp'] === '') {
+        $erreurs['cp'] = 'Le code postal est obligatoire.';
+    }
+    if ($donnees['ville'] === '') {
+        $erreurs['ville'] = 'La ville est obligatoire.';
+    }
+    if ($donnees['pays'] === '') {
+        $erreurs['pays'] = 'Le pays est obligatoire.';
+    }
+
     // -----------------------------------------------------------------
     // 4. Upload d'avatar (optionnel)
     // -----------------------------------------------------------------
@@ -139,6 +167,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         try {
             $idNouveauMembre = Membre::creer($donnees);
+
+            // Créer l'adresse par défaut (cahier des charges)
+            Adresse::creer($idNouveauMembre, [
+                'libelle'    => 'Adresse principale',
+                'nom'        => $donnees['nom'],
+                'prenom'     => $donnees['prenom'],
+                'rue'        => $donnees['rue'],
+                'numero'     => $donnees['numero'],
+                'complement' => null,
+                'cp'         => $donnees['cp'],
+                'ville'      => $donnees['ville'],
+                'pays'       => $donnees['pays'],
+                'telephone'  => null,
+                'type'       => 'les_deux',
+                'est_defaut' => 1,
+            ]);
 
             // Connexion automatique après inscription
             $nouveauMembre = Membre::trouverParId($idNouveauMembre);

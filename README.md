@@ -190,11 +190,14 @@ php sql/generer_hashes.php
 - [x] **Étape 2.** Socle commun : config, classes utilitaires, header/footer Tailwind
 - [x] **Étape 3.** Accueil + inscription + connexion + déconnexion + profil
 - [x] **Étape 4.** Mini-chat
-- [x] **Étape 5.** Blog/News (billets, commentaires, recherche, tags, likes)
-- [x] **Étape 6.** Achats (catalogue, panier, commande, paiement, codes promo, historique)
-- [ ] **Étape 7.** Administration (tableau de bord, gestion membres, articles, statistiques)
-- [ ] **Étape 8.** Sécurité finale : CSRF, audit log, anti brute-force
-- [ ] **Étape 9.** Documentation finale + captures + manuel utilisateur
+- [x] **Étape 5.** Blog/News (billets, commentaires, recherche, tags, likes, RGPD)
+- [x] **Étape 6.** Achats (catalogue, panier, commande, paiement, codes promo, historique, favoris, avis)
+- [x] **Étape 7.** Administration (membres, articles, commandes, statistiques, audit log)
+- [x] **Étape 8.** Sécurité finale : headers HTTP, rate limiting, audit, purge, OWASP Top 10
+- [x] **Étape 9.** Finalisation : adresses CRUD, catégories CRUD, mot de passe oublié,
+      notifications, page 404, documentation complète, schéma de référence
+
+**Projet 100 % terminé**, prêt pour le rendu du **13 juin 2026**.
 
 ## Auteur
 

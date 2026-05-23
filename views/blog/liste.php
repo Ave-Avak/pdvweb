@@ -123,7 +123,16 @@ $construireUrl = function (array $params) {
         <div class="space-y-5">
             <?php foreach ($billets as $b): ?>
                 <?php $tagsBillet = Billet::tagsDe((int)$b['id_billet']); ?>
-                <article class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
+                <article class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition">
+                    <?php if (!empty($b['image'])): ?>
+                        <a href="<?= url('/billet.php?id=' . (int)$b['id_billet']) ?>" class="block aspect-[3/1] bg-gray-100 overflow-hidden">
+                            <img src="<?= h(asset_article($b['image'])) ?>"
+                                 alt="<?= h($b['titre']) ?>"
+                                 class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                                 loading="lazy">
+                        </a>
+                    <?php endif; ?>
+                    <div class="p-6">
                     <a href="<?= url('/billet.php?id=' . (int)$b['id_billet']) ?>" class="block group">
                         <h2 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition">
                             <?= h($b['titre']) ?>
@@ -148,9 +157,14 @@ $construireUrl = function (array $params) {
                         <span>👍 <?= (int)$b['nb_likes'] ?> like<?= $b['nb_likes'] > 1 ? 's' : '' ?></span>
                     </div>
 
-                    <!-- Aperçu du corps -->
+                    <!-- Aperçu : résumé si défini, sinon extrait du corps -->
                     <p class="text-gray-700 mb-4">
-                        <?= h(tronquer(strip_tags($b['corps']), 250)) ?>
+                        <?php
+                        $apercu = !empty($b['resume'])
+                            ? $b['resume']
+                            : tronquer(strip_tags($b['corps']), 250);
+                        echo h($apercu);
+                        ?>
                     </p>
 
                     <!-- Tags -->
@@ -172,6 +186,7 @@ $construireUrl = function (array $params) {
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                         </svg>
                     </a>
+                    </div>
                 </article>
             <?php endforeach; ?>
         </div>

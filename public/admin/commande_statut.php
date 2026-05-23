@@ -25,6 +25,9 @@ if ($idFacture <= 0 || $idStatut <= 0) {
 }
 
 Facture::changerStatut($idFacture, $idStatut);
+AuditLog::enregistrer('commande.changer_statut', Auth::id(), 'achat_facture', $idFacture, [
+    'nouveau_statut' => $idStatut,
+]);
 Flash::succes('Statut mis à jour.');
 
 header('Location: ' . url('/admin/commandes.php'));

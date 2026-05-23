@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && Csrf::verifierRequete()) {
     if ($action === 'toggle' && $idCode > 0) {
         Db::pdo()->prepare("UPDATE code_promo SET actif = 1 - actif WHERE id_code = ?")
                  ->execute([$idCode]);
+        AuditLog::enregistrer('code_promo.toggle', Auth::id(), 'code_promo', $idCode);
         Flash::succes('Code promo mis à jour.');
     }
     header('Location: ' . url('/admin/codes_promo.php'));

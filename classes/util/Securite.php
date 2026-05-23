@@ -134,4 +134,208 @@ class Securite
     {
         return hash('sha256', $token);
     }
+
+
+    // =================================================================
+    //  HEADERS HTTP DE SÉCURITÉ (étape 8)
+    // =================================================================
+
+    /**
+     * Envoie les headers HTTP de sécurité recommandés par OWASP.
+     * À appeler depuis bootstrap.php AVANT tout output.
+     *
+     * Chaque header est commenté pour expliquer son rôle.
+     */
+    public static function envoyerHeadersSecurite(): void
+    {
+        // Ne fonctionne que si on n'a pas déjà envoyé du contenu
+        if (headers_sent()) {
+            return;
+        }
+
+        // ---- Content-Security-Policy ----
+        // Limite drastiquement les sources autorisées pour images, scripts, CSS, etc.
+        // Réduit fortement la surface d'attaque XSS : même si du JS malveillant
+        // arrivait à s'injecter, le navigateur refuserait de l'exécuter.
+        //
+        // 'self'  = même origine
+        // 'unsafe-inline' nécessaire pour Tailwind CDN + nos quelques scripts inline
+        // cdn.tailwindcss.com = le CDN Tailwind utilisé
+        // fonts.googleapis.com + fonts.gstatic.com = police Inter via Google Fonts
+        //
+        // Pour un projet de production sans CDN, on pourrait retirer 'unsafe-inline'.
+        $csp = "default-src 'self'; "
+             . "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; "
+             . "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com; "
+             . "img-src 'self' data:; "
+             . "font-src 'self' data: https://fonts.gstatic.com; "
+             . "connect-src 'self'; "
+             . "frame-ancestors 'none'; "
+             . "base-uri 'self'; "
+             . "form-action 'self'";
+        header("Content-Security-Policy: $csp");
+
+        // ---- X-Frame-Options ----
+        // Empêche le site d'être intégré dans une <iframe> sur un autre domaine.
+        // Protège contre les attaques de clickjacking (overlay invisible).
+        header('X-Frame-Options: DENY');
+
+        // ---- X-Content-Type-Options ----
+        // Force le navigateur à respecter le Content-Type renvoyé.
+        // Empêche le "MIME sniffing" qui pourrait exécuter un .txt comme du JS.
+        header('X-Content-Type-Options: nosniff');
+
+        // ---- Referrer-Policy ----
+        // Quand l'utilisateur clique vers un autre site, on n'envoie que l'origine
+        // (pas l'URL complète qui pourrait contenir des paramètres sensibles).
+        header('Referrer-Policy: strict-origin-when-cross-origin');
+
+        // ---- Permissions-Policy ----
+        // Désactive les API navigateur qu'on n'utilise pas (caméra, micro, etc.)
+        // Réduit les vecteurs d'attaque possibles.
+        header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()');
+
+        // ---- Strict-Transport-Security (HSTS) ----
+        // Force le navigateur à utiliser HTTPS pour les futures requêtes.
+        // En dev (XAMPP en HTTP), on ne l'active pas. En prod sous HTTPS, à activer :
+        // header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+
+        // ---- Retire le header X-Powered-By ----
+        // Cache l'info "PHP/8.2.12" qui aide les attaquants à cibler des CVE.
+        header_remove('X-Powered-By');
+    }
+
+
+    // =================================================================
+    //  RATE LIMITING (étape 8)
+    // =================================================================
+
+    /**
+     * Vérifie si une IP est rate-limited pour une action donnée.
+     * Retourne true si l'IP a dépassé le quota → bloquer la requête.
+     *
+     * Utilise la table tentative_connexion (étape 1) en y stockant
+     * une "action" arbitraire dans le champ login.
+     *
+     * @param string $action    Identifiant de l'action (ex: 'login_global')
+     * @param int    $maxParMinutes Quota max
+     * @param int    $minutes   Fenêtre de temps
+     */
+    public static function estRateLimited(string $action, int $maxParMinutes = 10, int $minutes = 15): bool
+    {
+        $ip = self::ip();
+        $req = Db::pdo()->prepare(
+            "SELECT COUNT(*) FROM tentative_connexion
+             WHERE ip = ?
+               AND login_essaye = ?
+               AND date_tent >= DATE_SUB(NOW(), INTERVAL ? MINUTE)"
+        );
+        $req->execute([$ip, $action, $minutes]);
+        return (int)$req->fetchColumn() >= $maxParMinutes;
+    }
+
+    /**
+     * Enregistre une action rate-limitée.
+     * @param string $action Identifiant de l'action
+     */
+    public static function enregistrerActionRateLimit(string $action): void
+    {
+        try {
+            $req = Db::pdo()->prepare(
+                "INSERT INTO tentative_connexion (login_essaye, ip, succes, date_tent)
+                 VALUES (?, ?, 0, NOW())"
+            );
+            $req->execute([$action, self::ip()]);
+        } catch (Throwable $e) {
+            // Best-effort
+        }
+    }
+
+
+    // =================================================================
+    //  MAINTENANCE (étape 8)
+    // =================================================================
+
+    /**
+     * Purge les tokens expirés (anciens session_id, password_reset, etc.).
+     * À appeler depuis une page admin ou un cron.
+     *
+     * @return array Compteurs par table
+     */
+    public static function purgerTokensExpires(): array
+    {
+        $pdo = Db::pdo();
+        $resultats = [];
+
+        // Tokens expirés (table token : password_reset, email_verification, etc.)
+        $req = $pdo->prepare(
+            "DELETE FROM token WHERE date_expiration < NOW()"
+        );
+        $req->execute();
+        $resultats['tokens_expires'] = $req->rowCount();
+
+        // Vieilles tentatives de connexion (> 30 jours)
+        $req = $pdo->prepare(
+            "DELETE FROM tentative_connexion
+             WHERE date_tent < DATE_SUB(NOW(), INTERVAL 30 DAY)"
+        );
+        $req->execute();
+        $resultats['tentatives_anciennes'] = $req->rowCount();
+
+        // Vieux logs de connexion (> 1 an = conservation RGPD raisonnable)
+        $req = $pdo->prepare(
+            "DELETE FROM log_connexion
+             WHERE date_log < DATE_SUB(NOW(), INTERVAL 1 YEAR)"
+        );
+        $req->execute();
+        $resultats['log_connexion_anciens'] = $req->rowCount();
+
+        // Vieilles vues d'article (> 90 jours = stats détaillées suffisantes)
+        $req = $pdo->prepare(
+            "DELETE FROM vue_article
+             WHERE date_vue < DATE_SUB(NOW(), INTERVAL 90 DAY)"
+        );
+        $req->execute();
+        $resultats['vues_articles_anciennes'] = $req->rowCount();
+
+        // Vieux logs de recherche (> 6 mois)
+        $req = $pdo->prepare(
+            "DELETE FROM recherche_log
+             WHERE date_recherche < DATE_SUB(NOW(), INTERVAL 6 MONTH)"
+        );
+        $req->execute();
+        $resultats['recherches_anciennes'] = $req->rowCount();
+
+        return $resultats;
+    }
+
+
+    /**
+     * Compte les éléments purgeables (pour affichage avant purge).
+     */
+    public static function compterPurgeables(): array
+    {
+        $pdo = Db::pdo();
+        return [
+            'tokens_expires' => (int)$pdo->query(
+                "SELECT COUNT(*) FROM token WHERE date_expiration < NOW()"
+            )->fetchColumn(),
+            'tentatives_anciennes' => (int)$pdo->query(
+                "SELECT COUNT(*) FROM tentative_connexion
+                 WHERE date_tent < DATE_SUB(NOW(), INTERVAL 30 DAY)"
+            )->fetchColumn(),
+            'log_connexion_anciens' => (int)$pdo->query(
+                "SELECT COUNT(*) FROM log_connexion
+                 WHERE date_log < DATE_SUB(NOW(), INTERVAL 1 YEAR)"
+            )->fetchColumn(),
+            'vues_articles_anciennes' => (int)$pdo->query(
+                "SELECT COUNT(*) FROM vue_article
+                 WHERE date_vue < DATE_SUB(NOW(), INTERVAL 90 DAY)"
+            )->fetchColumn(),
+            'recherches_anciennes' => (int)$pdo->query(
+                "SELECT COUNT(*) FROM recherche_log
+                 WHERE date_recherche < DATE_SUB(NOW(), INTERVAL 6 MONTH)"
+            )->fetchColumn(),
+        ];
+    }
 }

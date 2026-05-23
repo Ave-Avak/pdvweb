@@ -24,6 +24,7 @@ if ($idArticle <= 0) {
 }
 
 Article::supprimer($idArticle);
+AuditLog::enregistrer('article.supprimer', Auth::id(), 'article', $idArticle);
 Flash::succes('Article retiré du catalogue (les commandes existantes restent valides).');
 
 header('Location: ' . url('/admin/articles.php'));

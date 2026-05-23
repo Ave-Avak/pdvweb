@@ -129,6 +129,73 @@ require_once INCLUDES_PATH . '/header.php';
             </div>
         </div>
 
+        <!-- Adresse postale (obligatoire selon le cahier des charges) -->
+        <div class="pt-2 border-t border-gray-100">
+            <h2 class="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wider">Adresse postale</h2>
+
+            <div class="grid grid-cols-3 gap-3 mb-3">
+                <div class="col-span-2">
+                    <label for="rue" class="block text-sm font-medium text-gray-700 mb-1">
+                        Rue <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="rue" name="rue" required maxlength="150"
+                           value="<?= h($donnees['rue'] ?? '') ?>"
+                           class="w-full px-4 py-2 border <?= isset($erreurs['rue']) ? 'border-red-400' : 'border-gray-300' ?> rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
+                    <?php if (isset($erreurs['rue'])): ?>
+                        <p class="text-sm text-red-600 mt-1"><?= h($erreurs['rue']) ?></p>
+                    <?php endif; ?>
+                </div>
+                <div>
+                    <label for="numero" class="block text-sm font-medium text-gray-700 mb-1">
+                        Numéro <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="numero" name="numero" required maxlength="20"
+                           value="<?= h($donnees['numero'] ?? '') ?>"
+                           class="w-full px-4 py-2 border <?= isset($erreurs['numero']) ? 'border-red-400' : 'border-gray-300' ?> rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
+                    <?php if (isset($erreurs['numero'])): ?>
+                        <p class="text-sm text-red-600 mt-1"><?= h($erreurs['numero']) ?></p>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3 mb-3">
+                <div>
+                    <label for="cp" class="block text-sm font-medium text-gray-700 mb-1">
+                        Code postal <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="cp" name="cp" required maxlength="10"
+                           value="<?= h($donnees['cp'] ?? '') ?>"
+                           class="w-full px-4 py-2 border <?= isset($erreurs['cp']) ? 'border-red-400' : 'border-gray-300' ?> rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
+                    <?php if (isset($erreurs['cp'])): ?>
+                        <p class="text-sm text-red-600 mt-1"><?= h($erreurs['cp']) ?></p>
+                    <?php endif; ?>
+                </div>
+                <div class="col-span-2">
+                    <label for="ville" class="block text-sm font-medium text-gray-700 mb-1">
+                        Ville <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="ville" name="ville" required maxlength="80"
+                           value="<?= h($donnees['ville'] ?? '') ?>"
+                           class="w-full px-4 py-2 border <?= isset($erreurs['ville']) ? 'border-red-400' : 'border-gray-300' ?> rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
+                    <?php if (isset($erreurs['ville'])): ?>
+                        <p class="text-sm text-red-600 mt-1"><?= h($erreurs['ville']) ?></p>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div>
+                <label for="pays" class="block text-sm font-medium text-gray-700 mb-1">
+                    Pays <span class="text-red-500">*</span>
+                </label>
+                <select id="pays" name="pays" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 transition">
+                    <?php foreach (['Belgique', 'France', 'Luxembourg', 'Pays-Bas', 'Allemagne', 'Suisse'] as $p): ?>
+                        <option value="<?= h($p) ?>" <?= ($donnees['pays'] ?? 'Belgique') === $p ? 'selected' : '' ?>><?= h($p) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+
         <!-- Avatar (optionnel) -->
         <div>
             <label for="avatar" class="block text-sm font-medium text-gray-700 mb-1">
@@ -157,6 +224,14 @@ require_once INCLUDES_PATH . '/header.php';
 
         <!-- Boutons -->
         <div class="pt-4 border-t border-gray-100">
+            <p class="text-xs text-gray-500 mb-4 leading-relaxed">
+                En créant un compte, vous acceptez que vos données personnelles (nom, prénom, email,
+                date de naissance, avatar) soient stockées dans le but de gérer votre compte et vos
+                achats. Conformément au RGPD, vous pouvez à tout moment consulter, modifier ou
+                supprimer ces données depuis votre profil. La suppression entraîne une anonymisation
+                irréversible. Aucune donnée n'est partagée avec des tiers.
+            </p>
+
             <button type="submit"
                     class="w-full px-4 py-2.5 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition shadow-sm">
                 Créer mon compte

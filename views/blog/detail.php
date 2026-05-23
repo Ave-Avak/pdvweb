@@ -33,7 +33,18 @@ $idMembre      = Auth::id();
     <!-- ==============================================================
          CARTE — Le billet
     =============================================================== -->
-    <article class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8 mb-8">
+    <article class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+
+        <?php if (!empty($billet['image'])): ?>
+            <!-- Image illustrative en bandeau -->
+            <div class="aspect-[3/1] bg-gray-100 overflow-hidden">
+                <img src="<?= h(asset_article($billet['image'])) ?>"
+                     alt="<?= h($billet['titre']) ?>"
+                     class="w-full h-full object-cover">
+            </div>
+        <?php endif; ?>
+
+        <div class="p-6 md:p-8">
 
         <h1 class="text-3xl font-bold text-gray-900 mb-3"><?= h($billet['titre']) ?></h1>
 
@@ -111,6 +122,7 @@ $idMembre      = Auth::id();
                 </div>
             <?php endif; ?>
         </div>
+        </div>
     </article>
 
 
@@ -184,6 +196,24 @@ $idMembre      = Auth::id();
                                     <span class="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-semibold uppercase">Compte supprimé</span>
                                 <?php elseif ($c['statut'] === 'admin'): ?>
                                     <span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-semibold uppercase">Admin</span>
+                                <?php endif; ?>
+
+                                <?php
+                                // Bouton "Envoyer un message" :
+                                // - si membre connecté différent de l'auteur
+                                // - et auteur non anonymisé
+                                if (Auth::estConnecte()
+                                    && (int)$c['id_membre'] !== $idMembre
+                                    && empty($c['date_anonymisation'])):
+                                ?>
+                                    <a href="<?= url('/messages_nouveau.php?to=' . (int)$c['id_membre']) ?>"
+                                       class="text-[10px] text-primary-600 hover:underline flex items-center gap-1" title="Envoyer un message">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                        </svg>
+                                        message
+                                    </a>
                                 <?php endif; ?>
                             </div>
                             <time class="text-xs text-gray-500" title="<?= h(format_date($c['date_comm'])) ?>">
