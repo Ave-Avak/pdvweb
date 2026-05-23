@@ -119,11 +119,13 @@ class Auth
         $_SESSION['avatar']    = $membre['avatar'] ?? null;
         $_SESSION['statut']    = $membre['statut'];
 
-        // Le cahier des charges précise : "panier persistant jusqu'à la
-        // prochaine connexion". À chaque connexion, on REPART d'un panier vide.
-        // (Si le membre était déjà connecté avec un panier en cours, on
-        // n'efface pas — mais ici on est dans le cadre d'une nouvelle connexion.)
-        unset($_SESSION['panier']);
+        // PANIER PERSISTANT (migration 11) :
+        // Au lieu de vider le panier comme avant, on CHARGE le panier
+        // sauvegardé en BDD lors d'une session précédente, en le fusionnant
+        // avec ce qui est éventuellement en session (ajouts anonymes).
+        if (class_exists('Panier')) {
+            Panier::chargerDepuisBdd((int)$membre['id_membre']);
+        }
 
         // Régénération du jeton CSRF après connexion
         Csrf::regenerer();
@@ -140,9 +142,17 @@ class Auth
 
     /**
      * Déconnecte l'utilisateur courant : vide la session et détruit le cookie.
+     *
+     * IMPORTANT : avant de vider la session, on sauvegarde le panier en BDD
+     * pour qu'il soit retrouvé à la prochaine connexion (migration 11).
      */
     public static function deconnecter(): void
     {
+        // PANIER PERSISTANT : sauvegarde avant destruction de la session
+        if (self::estConnecte() && class_exists('Panier')) {
+            Panier::sauvegarderSiConnecte();
+        }
+
         // Vidage du tableau $_SESSION
         $_SESSION = [];
 

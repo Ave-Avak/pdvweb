@@ -191,8 +191,8 @@ class Facture
             // 12. Commit
             $pdo->commit();
 
-            // 13. Vider le panier
-            Panier::vider();
+            // 13. Vider le panier (session ET BDD pour le panier persistant)
+            Panier::viderTout();
 
             return ['succes' => true, 'id_facture' => $idFacture, 'erreur' => null];
 

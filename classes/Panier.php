@@ -130,6 +130,9 @@ class Panier
         $panier[$idArticle] = $qteFuture;
         $_SESSION['panier'] = $panier;
 
+        // Synchronisation BDD pour persistance entre sessions
+        self::sauvegarderSiConnecte();
+
         return [
             'succes'  => true,
             'message' => "« " . $article['nom'] . " » ajouté au panier.",
@@ -163,6 +166,8 @@ class Panier
         $panier[$idArticle] = $nouvelleQuantite;
         $_SESSION['panier'] = $panier;
 
+        self::sauvegarderSiConnecte();
+
         return ['succes' => true, 'message' => 'Panier mis à jour.'];
     }
 
@@ -177,15 +182,40 @@ class Panier
         }
         unset($panier[$idArticle]);
         $_SESSION['panier'] = $panier;
+
+        self::sauvegarderSiConnecte();
+
         return ['succes' => true, 'message' => 'Article retiré du panier.'];
     }
 
     /**
      * Vide complètement le panier (après achat, ou à la connexion).
+     * NOTE : ne vide PAS le panier BDD (pour préserver l'inter-session).
+     * Pour vider aussi en BDD, utiliser viderTout().
      */
     public static function vider(): void
     {
         unset($_SESSION['panier']);
+    }
+
+    /**
+     * Vide TOTALEMENT le panier (session ET BDD).
+     * À appeler après validation d'une commande.
+     */
+    public static function viderTout(): void
+    {
+        unset($_SESSION['panier']);
+
+        if (class_exists('Auth') && Auth::estConnecte()) {
+            try {
+                $req = Db::pdo()->prepare(
+                    "DELETE FROM panier_persistant WHERE id_membre = ?"
+                );
+                $req->execute([Auth::id()]);
+            } catch (Throwable $e) {
+                // Table inexistante (migration 11 pas appliquée) → silencieux
+            }
+        }
     }
 
     /**
@@ -203,5 +233,143 @@ class Panier
     public static function estVide(): bool
     {
         return empty($_SESSION['panier']);
+    }
+
+
+    // =================================================================
+    // PERSISTANCE BDD (panier persistant entre sessions)
+    // =================================================================
+
+    /**
+     * Sauvegarde le panier en BDD si le membre est connecté.
+     * Méthode "best-effort" : silencieuse en cas d'erreur (table inexistante).
+     */
+    public static function sauvegarderSiConnecte(): void
+    {
+        if (!class_exists('Auth') || !Auth::estConnecte()) {
+            return;
+        }
+
+        $idMembre = Auth::id();
+        $panier = self::obtenir();
+        $pdo = Db::pdo();
+
+        try {
+            $pdo->beginTransaction();
+
+            // On efface l'ancien panier BDD pour repartir propre
+            $pdo->prepare("DELETE FROM panier_persistant WHERE id_membre = ?")
+                ->execute([$idMembre]);
+
+            // On insère les lignes actuelles
+            if (!empty($panier)) {
+                $req = $pdo->prepare(
+                    "INSERT INTO panier_persistant (id_membre, id_article, quantite)
+                     VALUES (?, ?, ?)"
+                );
+                foreach ($panier as $idArticle => $qte) {
+                    $idArticle = (int)$idArticle;
+                    $qte = (int)$qte;
+                    if ($idArticle > 0 && $qte > 0) {
+                        $req->execute([$idMembre, $idArticle, $qte]);
+                    }
+                }
+            }
+
+            $pdo->commit();
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            // Migration 11 pas appliquée → silencieux pour ne pas casser l'app
+        }
+    }
+
+    /**
+     * Charge le panier depuis la BDD vers la session.
+     * Appelé à la connexion d'un membre.
+     *
+     * Logique de fusion :
+     *   - Si la session a déjà un panier (ajouts anonymes) → on FUSIONNE
+     *     (somme des quantités, en respectant le max et le stock)
+     *   - Sinon → on prend tel quel le panier BDD
+     *
+     * @param int $idMembre
+     */
+    public static function chargerDepuisBdd(int $idMembre): void
+    {
+        try {
+            $req = Db::pdo()->prepare(
+                "SELECT pp.id_article, pp.quantite
+                 FROM panier_persistant pp
+                 INNER JOIN article a ON a.id_article = pp.id_article
+                 WHERE pp.id_membre = ?
+                   AND a.dispo = 1"
+            );
+            $req->execute([$idMembre]);
+            $panierBdd = [];
+            foreach ($req->fetchAll() as $ligne) {
+                $panierBdd[(int)$ligne['id_article']] = (int)$ligne['quantite'];
+            }
+        } catch (Throwable $e) {
+            // Table inexistante → on ne fait rien
+            return;
+        }
+
+        if (empty($panierBdd)) {
+            return;  // Rien à charger
+        }
+
+        $panierSession = self::obtenir();
+        $qteMax = self::quantiteMaxParArticle();
+
+        // Fusion : on additionne les quantités (en respectant les limites)
+        foreach ($panierBdd as $idArticle => $qteBdd) {
+            $qteSession = (int)($panierSession[$idArticle] ?? 0);
+            $qteFusion = $qteSession + $qteBdd;
+
+            // Vérifier le max par article
+            if ($qteFusion > $qteMax) {
+                $qteFusion = $qteMax;
+            }
+
+            // Vérifier le stock actuel
+            try {
+                $article = Article::trouverParId($idArticle);
+                if ($article && $qteFusion > (int)$article['stock']) {
+                    $qteFusion = (int)$article['stock'];
+                }
+            } catch (Throwable $e) {
+                continue;
+            }
+
+            if ($qteFusion > 0) {
+                $panierSession[$idArticle] = $qteFusion;
+            }
+        }
+
+        $_SESSION['panier'] = $panierSession;
+
+        // On re-sauvegarde en BDD pour refléter la fusion
+        self::sauvegarderSiConnecte();
+    }
+
+    /**
+     * Date de dernière modification du panier en BDD.
+     * Utile pour afficher "Sauvegardé il y a X minutes".
+     *
+     * @param int $idMembre
+     * @return string|null Format datetime, ou null si pas de panier sauvé
+     */
+    public static function dateDerniereSauvegarde(int $idMembre): ?string
+    {
+        try {
+            $req = Db::pdo()->prepare(
+                "SELECT MAX(date_modif) FROM panier_persistant WHERE id_membre = ?"
+            );
+            $req->execute([$idMembre]);
+            $date = $req->fetchColumn();
+            return $date ?: null;
+        } catch (Throwable $e) {
+            return null;
+        }
     }
 }
