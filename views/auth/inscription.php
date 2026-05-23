@@ -15,9 +15,28 @@ require_once INCLUDES_PATH . '/header.php';
 
 <div class="max-w-2xl mx-auto">
 
-    <div class="mb-6 text-center">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Créer un compte</h1>
-        <p class="text-gray-600">Rejoignez la communauté PDVWeb en quelques clics</p>
+    <!-- En-tête soigné -->
+    <div class="mb-8 text-center">
+        <div class="inline-flex w-16 h-16 bg-primary-100 rounded-full items-center justify-center mb-4">
+            <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+            </svg>
+        </div>
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Créer votre compte</h1>
+        <p class="text-gray-600">
+            Rejoignez la communauté PDVWeb gratuitement et en quelques minutes.
+        </p>
+    </div>
+
+    <!-- Bandeau rassurance RGPD -->
+    <div class="bg-info-50 border border-info-200 rounded-lg p-3 mb-6 flex items-start gap-3">
+        <svg class="w-5 h-5 text-info-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+        </svg>
+        <p class="text-sm text-info-800">
+            Vos données sont protégées (RGPD). Vous pouvez les consulter, modifier ou supprimer à tout moment.
+            <a href="<?= url('/mentions_legales.php#donnees') ?>" class="font-semibold underline">En savoir plus</a>
+        </p>
     </div>
 
     <?php if (!empty($erreurs['general'])): ?>

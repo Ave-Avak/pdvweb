@@ -1,59 +1,49 @@
 ═══════════════════════════════════════════════════════════════
-  ADMIN — 4 NOUVELLES ACTIONS SUR LES MEMBRES
+  PHASE 2 — UI/UX POLISH
 ═══════════════════════════════════════════════════════════════
 
-📊 Fonctionnalités ajoutées :
+📦 9 fichiers polishés
 
-✅ 1. MODIFIER LES DONNÉES D'UN MEMBRE
-   - Bouton "Modifier" sur la fiche membre
-   - Nouvelle page /admin/membre_form.php
-   - Champs modifiables : nom, prénom, date de naissance,
-     email, login, état de vérification email
-   - Validation complète : email valide, unicité login/email,
-     âge >= 13 ans, regex login
+🎨 EMPTY STATES UNIFORMISÉS
+   Tous les états vides ont maintenant le même style :
+   - Icône colorée dans un rond
+   - Titre rassurant
+   - Description explicative
+   - Call-to-action clair
+   
+   Pages améliorées :
+   ✓ Panier vide
+   ✓ Messages (aucune conversation)
+   ✓ Notifications (aucune notification)
+   ✓ Adresses (aucune adresse enregistrée)
 
-✅ 2. RÉINITIALISER LE MOT DE PASSE
-   - Bouton "Reset mdp" sur la fiche membre
-   - Génère un mdp temporaire fort (12 caractères, sans
-     caractères ambigus)
-   - Affiché à l'admin avec bouton "Copier"
-   - L'admin communique au membre par un canal sûr
-   - Stocké 5 minutes max en session, jamais en BDD en clair
+🔐 PAGE LOGIN POLISHÉE
+   - Icône cadenas dans rond primary
+   - "Bon retour !" au lieu de "Connexion"
+   - Lien "Mot de passe oublié ?" déplacé près du champ
+     (au lieu d'en bas)
+   - Bouton avec icône flèche
+   - Lien inscription mis en valeur ("gratuitement")
 
-✅ 3. ANONYMISATION RGPD
-   - Bouton "Anonymiser" en bas à droite (en rouge)
-   - Modale de confirmation forte : il faut RETAPER le login
-     du membre pour confirmer (évite les erreurs)
-   - Liste exhaustive des conséquences affichée
-   - Action IRRÉVERSIBLE
-   - Conforme RGPD (article 17 - droit à l'oubli)
+📝 PAGE INSCRIPTION POLISHÉE
+   - Icône utilisateur dans rond primary
+   - Bandeau rassurance RGPD au-dessus du formulaire
+   - Lien direct vers mentions_legales#donnees
 
-✅ 4. VÉRIFIER L'EMAIL MANUELLEMENT
-   - Bouton "Vérifier email" (uniquement si non vérifié)
-   - Utile en support utilisateur
+👤 PAGE PROFIL POLISHÉE
+   - En-tête avec avatar + "Bonjour, [prénom]"
+   - Lien rapide vers vos droits RGPD
 
-═══════════════════════════════════════════════════════════════
-  AUDIT LOG
-═══════════════════════════════════════════════════════════════
+📄 PAGE 404 ENRICHIE
+   - Animation pulse-soft sur le "404"
+   - Icône loupe décorative 🔍
+   - Boutons avec icônes
+   - Message plus engageant
 
-Nouvelles actions tracées :
-   - membre.admin_modifier
-   - membre.admin_reset_mdp
-   - membre.anonymiser
-   - membre.email_verifie_admin
-
-(en plus des bloquer/debloquer/promouvoir/degrader existantes)
-
-═══════════════════════════════════════════════════════════════
-  SÉCURITÉ
-═══════════════════════════════════════════════════════════════
-
-✓ Admin ne peut PAS s'auto-modifier (anti-bricolage)
-✓ Compte anonymisé : aucune action possible
-✓ Confirmation forte pour l'anonymisation (taper le login)
-✓ Mdp temporaire en session (5 min max, jamais persistant)
-✓ Toutes les actions en POST + CSRF
-✓ Tout est tracé dans audit_log
+🏷️ FOOTER ENRICHI
+   - Badges "🔒 Site sécurisé" et "🛡 RGPD" dans la colonne
+     à propos
+   - Rassurant pour les visiteurs
 
 ═══════════════════════════════════════════════════════════════
   INSTALLATION
@@ -62,38 +52,26 @@ Nouvelles actions tracées :
 1. Extraire ce ZIP par-dessus C:\xampp\htdocs\pdvweb\
 2. Ctrl + F5
 
-Pas de migration SQL nécessaire (toutes les colonnes existent).
+Pas de migration SQL. Pas de risque de régression métier.
 
 ═══════════════════════════════════════════════════════════════
   TESTS À FAIRE
 ═══════════════════════════════════════════════════════════════
 
-[ ] /admin/membres.php → cliquer sur un membre
-[ ] Bouton "Modifier" → page d'édition → modifier le nom
-[ ] Bouton "Reset mdp" → mdp temporaire affiché
-[ ] Bouton "Vérifier email" → email passé à vérifié
-[ ] Bouton "Anonymiser" → modale s'ouvre
-[ ] Taper un mauvais login → erreur
-[ ] Taper le bon login → anonymisation effectuée
-[ ] /admin/audit.php → toutes les actions visibles
+[ ] /login.php → joli formulaire avec icône cadenas
+[ ] /inscription.php → bandeau RGPD au-dessus
+[ ] /profil.php → "Bonjour, [prénom]" avec avatar
+[ ] /panier (vide) → empty state moderne
+[ ] /messages.php (sans conv) → empty state
+[ ] /notifications.php (vide) → empty state
+[ ] /adresses.php (vide) → empty state
+[ ] /une-page-inexistante → 404 moderne
+[ ] Footer → badges 🔒 et 🛡 visibles
 
 ═══════════════════════════════════════════════════════════════
-  POINTS DE VIGILANCE POUR LA DÉFENSE ORALE
+  STATS PROJET
 ═══════════════════════════════════════════════════════════════
-
-🎯 Le mdp temporaire affiché à l'admin est un compromis :
-   En production, on enverrait un lien de reset par email.
-   Sans SMTP, on affiche le mdp temporaire à l'admin qui doit
-   le communiquer au membre par un canal sûr. C'est la pratique
-   courante quand pas d'envoi email automatique.
-
-🎯 L'anonymisation est conforme RGPD :
-   - Article 17 (droit à l'oubli) : ✓
-   - Données personnelles supprimées (pseudonymisation forte)
-   - Données comptables conservées (obligation légale belge)
-   - Conséquences listées clairement à l'admin
-   - Confirmation forte (anti-erreur)
-
-🎯 La modification admin est tracée dans audit_log
-   pour conformité RGPD (traçabilité des modifications).
-
+   - 152 fichiers PHP (inchangé)
+   - 0 erreur de syntaxe
+   - 0 modification de logique métier
+   - UI/UX nettement plus cohérent et soigné

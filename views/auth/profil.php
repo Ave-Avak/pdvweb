@@ -16,9 +16,21 @@ require_once INCLUDES_PATH . '/header.php';
 <div class="max-w-3xl mx-auto">
 
     <!-- En-tête de page -->
-    <div class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Mon profil</h1>
-        <p class="text-gray-600">Gérez vos informations personnelles et votre sécurité</p>
+    <div class="mb-8 flex items-center gap-4">
+        <img src="<?= h(asset_avatar($membre['avatar'])) ?>"
+             alt="Mon avatar"
+             class="w-16 h-16 rounded-full object-cover border-2 border-gray-200">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">
+                Bonjour, <?= h($membre['prenom']) ?>
+            </h1>
+            <p class="text-gray-600 text-sm">
+                Gérez vos informations personnelles et votre sécurité.
+                <a href="<?= url('/mentions_legales.php#droits') ?>" class="text-primary-600 hover:underline ml-1">
+                    Vos droits RGPD →
+                </a>
+            </p>
+        </div>
     </div>
 
     <!-- ==============================================================

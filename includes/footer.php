@@ -25,9 +25,17 @@
                     <div class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold">P</div>
                     <span class="text-lg font-bold text-gray-900"><?= h(parametre('site.nom', SITE_NAME)) ?></span>
                 </div>
-                <p class="text-sm text-gray-600">
+                <p class="text-sm text-gray-600 mb-3">
                     <?= h(parametre('site.slogan', 'Votre boutique en ligne multi-rayons.')) ?>
                 </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-success-50 text-success-700 text-xs font-semibold rounded">
+                        🔒 Site sécurisé
+                    </span>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-info-50 text-info-700 text-xs font-semibold rounded">
+                        🛡 RGPD
+                    </span>
+                </div>
             </div>
 
             <!-- Colonne 2 : navigation -->
