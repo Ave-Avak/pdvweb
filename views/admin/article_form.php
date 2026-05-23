@@ -90,6 +90,34 @@ require_once INCLUDES_PATH . '/header.php';
             <?php if (isset($erreurs['image'])): ?><p class="text-sm text-red-600 mt-1"><?= h($erreurs['image']) ?></p><?php endif; ?>
         </div>
 
+        <!-- Tags (Phase 3.2) -->
+        <?php if (!empty($tousTags)): ?>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Tags
+                </label>
+                <div class="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <?php foreach ($tousTags as $tg): ?>
+                        <?php $coche = in_array((int)$tg['id_tag'], $donnees['tags'], true); ?>
+                        <label class="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-300 rounded-full text-xs cursor-pointer hover:bg-primary-50 hover:border-primary-300 transition <?= $coche ? 'bg-primary-100 border-primary-400 text-primary-800' : '' ?>">
+                            <input type="checkbox" name="tags[]" value="<?= (int)$tg['id_tag'] ?>"
+                                   <?= $coche ? 'checked' : '' ?>
+                                   class="w-3 h-3 text-primary-600 rounded">
+                            <span>#<?= h($tg['nom']) ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">
+                    Marquez cet article avec des tags (ex: Promotion, Nouveauté).
+                    <a href="<?= url('/admin/tags.php') ?>" class="text-primary-600 hover:underline">Gérer les tags →</a>
+                </p>
+            </div>
+        <?php else: ?>
+            <div class="bg-info-50 border border-info-200 rounded-lg p-3 text-sm text-info-800">
+                💡 Aucun tag n'existe encore. <a href="<?= url('/admin/tags.php') ?>" class="font-semibold underline">Créez-en depuis la page Tags →</a>
+            </div>
+        <?php endif; ?>
+
         <div>
             <label class="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" name="dispo" value="1" <?= (int)$donnees['dispo'] === 1 ? 'checked' : '' ?>>

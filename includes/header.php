@@ -171,6 +171,24 @@ $membreConnecte = Auth::membre();
 
             <!-- Zone droite : connecté ou non -->
             <div class="flex items-center gap-2">
+
+                <!-- Comparateur (Phase 3.3) — accessible à tous -->
+                <?php
+                $nbCompar = !empty($_SESSION['comparateur']) ? count($_SESSION['comparateur']) : 0;
+                ?>
+                <?php if ($nbCompar > 0): ?>
+                    <a href="<?= url('/comparer.php') ?>"
+                       class="relative p-2 text-gray-700 hover:text-primary-600 transition" title="Comparateur (<?= $nbCompar ?>)">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
+                        </svg>
+                        <span class="absolute -top-1 -right-1 bg-primary-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                            <?= $nbCompar ?>
+                        </span>
+                    </a>
+                <?php endif; ?>
+
                 <?php if ($membreConnecte): ?>
                     <!-- Panier (membres) -->
                     <a href="<?= url('/panier.php') ?>"

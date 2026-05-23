@@ -32,6 +32,7 @@ $donnees = [
     'image'         => $modeEdition ? $article['image']         : null,
     'poids_grammes' => $modeEdition ? $article['poids_grammes'] : '',
     'dispo'         => $modeEdition ? (int)$article['dispo']    : 1,
+    'tags'          => $modeEdition ? Article::idsTagsDe($idArticle) : [],
 ];
 $erreurs = [];
 
@@ -53,6 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $donnees['stock']         = max(0, (int)($_POST['stock'] ?? 0));
     $donnees['poids_grammes'] = $_POST['poids_grammes'] !== '' ? (int)$_POST['poids_grammes'] : null;
     $donnees['dispo']         = !empty($_POST['dispo']) ? 1 : 0;
+    $donnees['tags']          = array_map('intval', (array)($_POST['tags'] ?? []));
 
     // Validation
     if ($donnees['nom'] === '') $erreurs['nom'] = 'Le nom est obligatoire.';
@@ -90,6 +92,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
                 Flash::succes('Article créé avec succès.');
             }
+
+            // Phase 3.2 — Associer les tags (silencieux si table inexistante)
+            Article::associerTags($idArticle, $donnees['tags']);
+
             header('Location: ' . url('/admin/articles.php'));
             exit;
         } catch (Throwable $e) {
@@ -100,6 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $categories = Categorie::listerTous();
+$tousTags = Tag::listerTous();  // Pour le sélecteur de tags
 
 $titre = $modeEdition ? 'Modifier article' : 'Nouvel article';
 require_once VIEWS_PATH . '/admin/article_form.php';

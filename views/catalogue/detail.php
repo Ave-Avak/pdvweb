@@ -37,6 +37,18 @@ $qteMax = min((int)$article['stock'], Panier::quantiteMaxParArticle());
                 <p class="text-sm text-gray-500 mb-1"><?= h($article['categorie_nom']) ?></p>
                 <h1 class="text-2xl font-bold text-gray-900 mb-3"><?= h($article['nom']) ?></h1>
 
+                <!-- Tags (Phase 3.2) -->
+                <?php if (!empty($tagsArticle)): ?>
+                    <div class="flex flex-wrap gap-1.5 mb-4">
+                        <?php foreach ($tagsArticle as $tg): ?>
+                            <a href="<?= url('/catalogue.php?tag=' . (int)$tg['id_tag']) ?>"
+                               class="inline-flex items-center gap-1 px-2 py-0.5 bg-primary-50 text-primary-700 text-xs font-semibold rounded hover:bg-primary-100 transition">
+                                #<?= h($tg['nom']) ?>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
                 <!-- Étoiles -->
                 <?php if ($statsNotes['nb_notes'] > 0): ?>
                     <div class="flex items-center gap-2 mb-4">
@@ -101,6 +113,23 @@ $qteMax = min((int)$article['stock'], Panier::quantiteMaxParArticle());
                                 <?= $estFavori ? '❤️ Retirer des favoris' : '🤍 Ajouter aux favoris' ?>
                             </button>
                         </form>
+                    <?php endif; ?>
+
+                    <!-- Bouton comparer (Phase 3.3) -->
+                    <?php
+                    $dansCompar = !empty($_SESSION['comparateur'])
+                                  && in_array((int)$article['id_article'], $_SESSION['comparateur'], true);
+                    ?>
+                    <?php if ($dansCompar): ?>
+                        <a href="<?= url('/comparer.php') ?>"
+                           class="w-full block text-center px-5 py-2 bg-primary-100 text-primary-700 font-semibold rounded-lg hover:bg-primary-200 transition">
+                            ⚖️ Voir le comparateur (<?= count($_SESSION['comparateur']) ?>)
+                        </a>
+                    <?php else: ?>
+                        <a href="<?= url('/comparer.php?add=' . (int)$article['id_article'] . '&retour=' . urlencode($_SERVER['REQUEST_URI'])) ?>"
+                           class="w-full block text-center px-5 py-2 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition">
+                            ⚖️ Ajouter au comparateur
+                        </a>
                     <?php endif; ?>
                 </div>
             </div>
