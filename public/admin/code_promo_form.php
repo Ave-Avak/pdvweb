@@ -170,4 +170,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $titre = $modeEdition ? 'Modifier le code promo' : 'Nouveau code promo';
+
+// Pour l'avertissement en mode édition (déplacé hors de la vue par respect MVC)
+$nbUtilisations = $modeEdition ? CodePromo::nbUtilisations($idCode) : 0;
+
 require_once VIEWS_PATH . '/admin/code_promo_form.php';

@@ -206,14 +206,11 @@ require_once INCLUDES_PATH . '/header.php';
         </div>
 
         <!-- Aperçu en édition -->
-        <?php if ($modeEdition): ?>
-            <?php $nbUtil = (int)Db::pdo()->query("SELECT COUNT(*) FROM code_promo_utilisation WHERE id_code = " . (int)$idCode)->fetchColumn(); ?>
-            <?php if ($nbUtil > 0): ?>
-                <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
-                    ⚠️ Ce code a déjà été utilisé <strong><?= $nbUtil ?></strong> fois.
-                    Modifier la valeur ou les dates n'affecte pas les utilisations passées.
-                </div>
-            <?php endif; ?>
+        <?php if ($modeEdition && $nbUtilisations > 0): ?>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+                ⚠️ Ce code a déjà été utilisé <strong><?= $nbUtilisations ?></strong> fois.
+                Modifier la valeur ou les dates n'affecte pas les utilisations passées.
+            </div>
         <?php endif; ?>
 
         <!-- Boutons -->

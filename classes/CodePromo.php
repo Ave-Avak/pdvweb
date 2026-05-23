@@ -221,4 +221,17 @@ class CodePromo
         $req = Db::pdo()->prepare("DELETE FROM code_promo WHERE id_code = ?");
         return $req->execute([$idCode]);
     }
+
+    /**
+     * Nombre de fois où ce code a été utilisé.
+     * Utilisé dans l'écran d'édition pour afficher un avertissement.
+     */
+    public static function nbUtilisations(int $idCode): int
+    {
+        $req = Db::pdo()->prepare(
+            "SELECT COUNT(*) FROM code_promo_utilisation WHERE id_code = ?"
+        );
+        $req->execute([$idCode]);
+        return (int)$req->fetchColumn();
+    }
 }

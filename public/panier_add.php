@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !Csrf::verifierRequete()) {
 
 $idArticle = (int)($_POST['id_article'] ?? 0);
 $quantite  = max(1, (int)($_POST['quantite'] ?? 1));
-$retour    = $_POST['retour'] ?? url('/catalogue.php');
+$retour    = retour_securise($_POST['retour'] ?? null, url('/catalogue.php'));
 
 $resultat = Panier::ajouter($idArticle, $quantite);
 

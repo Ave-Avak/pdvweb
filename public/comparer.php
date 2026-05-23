@@ -48,7 +48,7 @@ if (isset($_GET['add'])) {
         }
     }
     // Redirige sur la page d'origine ou comparateur
-    $retour = $_GET['retour'] ?? url('/comparer.php');
+    $retour = retour_securise($_GET['retour'] ?? null, url('/comparer.php'));
     header('Location: ' . $retour);
     exit;
 }

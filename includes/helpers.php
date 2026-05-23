@@ -52,6 +52,60 @@ function url(string $chemin = ''): string
 
 
 /**
+ * retour_securise() — Valide une URL de retour pour éviter les Open Redirect.
+ *
+ * Protège contre la vulnérabilité OWASP A01 (Broken Access Control / Open Redirect).
+ *
+ * Une URL de retour ($_GET['retour'] ou $_POST['retour']) est considérée comme
+ * sûre uniquement si :
+ *   - Elle commence par SITE_URL (URL absolue de notre site), OU
+ *   - Elle commence par '/' (URL relative, donc forcément interne), OU
+ *   - Elle ne contient pas '://' ni '\\' (pas de protocole arbitraire)
+ *
+ * Si l'URL n'est pas sûre, on retourne une URL par défaut.
+ *
+ * Exemples :
+ *   retour_securise('/catalogue.php')                  → /catalogue.php (OK)
+ *   retour_securise(SITE_URL . '/article.php?id=5')   → URL légitime (OK)
+ *   retour_securise('https://site-malveillant.com')   → URL par défaut (rejeté)
+ *   retour_securise('//evil.com/phish')               → URL par défaut (rejeté)
+ *   retour_securise('javascript:alert(1)')            → URL par défaut (rejeté)
+ *
+ * @param string|null $retour  URL fournie par l'utilisateur (à valider)
+ * @param string $defaut       URL de fallback si $retour invalide ou vide
+ * @return string              URL sûre garantie
+ */
+function retour_securise(?string $retour, string $defaut = ''): string
+{
+    if ($defaut === '') {
+        $defaut = url('/');
+    }
+
+    if (empty($retour)) {
+        return $defaut;
+    }
+
+    // Refuser explicitement les protocoles arbitraires (javascript:, data:, etc.)
+    if (preg_match('#^[a-z]+:#i', $retour) && stripos($retour, SITE_URL) !== 0) {
+        return $defaut;
+    }
+
+    // Refuser les URLs commençant par // (protocol-relative qui peut sortir du site)
+    if (str_starts_with($retour, '//') || str_starts_with($retour, '\\\\')) {
+        return $defaut;
+    }
+
+    // Accepter : URL relative (/page.php) ou URL absolue de notre site
+    if (str_starts_with($retour, '/') || str_starts_with($retour, SITE_URL)) {
+        return $retour;
+    }
+
+    // Tout le reste est suspect
+    return $defaut;
+}
+
+
+/**
  * asset() — URL d'un fichier statique (CSS, JS, image, avatar).
  *
  * Exemples :

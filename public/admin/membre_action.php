@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !Csrf::verifierRequete()) {
 
 $idMembre = (int)($_POST['id_membre'] ?? 0);
 $action   = trim($_POST['action'] ?? '');
-$retour   = $_POST['retour'] ?? url('/admin/membres.php');
+$retour   = retour_securise($_POST['retour'] ?? null, url('/admin/membres.php'));
 
 if ($idMembre <= 0) {
     Flash::erreur('Membre invalide.');

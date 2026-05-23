@@ -16,7 +16,7 @@ Auth::requireLogin();
 
 $idMembre = Auth::id();
 $idAdresse = (int)($_GET['id'] ?? 0);
-$retour = trim($_GET['retour'] ?? '');
+$retour = retour_securise($_GET['retour'] ?? null, url('/adresses.php'));
 $modeEdition = $idAdresse > 0;
 
 $adresse = null;

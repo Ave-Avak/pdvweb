@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !Csrf::verifierRequete()) {
 }
 
 $idArticle = (int)($_POST['id_article'] ?? 0);
-$retour    = $_POST['retour'] ?? url('/article.php?id=' . $idArticle);
+$retour    = retour_securise($_POST['retour'] ?? null, url('/article.php?id=' . $idArticle));
 
 if ($idArticle <= 0) {
     header('Location: ' . url('/catalogue.php'));
