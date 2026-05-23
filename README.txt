@@ -1,93 +1,71 @@
 ═══════════════════════════════════════════════════════════════
-  CORRECTIONS FINALES + DOC LIMITATIONS CONNUES
+  AMÉLIORATION : panier toujours visible dans le header
 ═══════════════════════════════════════════════════════════════
 
-⚠️ AUCUNE MIGRATION SQL NÉCESSAIRE
-   Pas de modification de schéma BDD.
+CHANGEMENT
+   Avant : panier caché pour visiteurs si vide
+   Après : panier TOUJOURS visible pour tout le monde
 
 ═══════════════════════════════════════════════════════════════
-  CE QUI A ÉTÉ CORRIGÉ
+  COMPORTEMENT FINAL
 ═══════════════════════════════════════════════════════════════
 
-1. 🔒 FAILLE OPEN REDIRECT (OWASP A01) — CORRIGÉE
-   
-   Avant : header('Location: ' . $_POST['retour']) sans validation
-   Risque : phishing via lien fabriqué
-   
-   Après : header('Location: ' . retour_securise($_POST['retour'] ?? null))
-   - Nouvelle fonction retour_securise() dans includes/helpers.php
-   - Validation : refus de javascript:, //evil.com, protocoles arbitraires
-   - 5 fichiers sécurisés :
-     * public/panier_add.php
-     * public/favori_toggle.php
-     * public/comparer.php
-     * public/admin/membre_action.php
-     * public/adresse_form.php
+VISITEUR (UNM) :
+   ✓ Icône 🛒 TOUJOURS visible
+   ✓ Sans badge si vide
+   ✓ Avec badge "N" si articles ajoutés
 
-2. 🏗️ SQL DANS UNE VUE — CORRIGÉ (respect MVC)
-   
-   Avant : <?php $nbUtil = Db::pdo()->query(...) ?> dans la vue
-   Après :
-   - Nouvelle méthode CodePromo::nbUtilisations($idCode)
-   - Variable $nbUtilisations chargée dans le contrôleur
-   - Vue utilise simplement la variable
-   
-   Vérification : grep "Db::pdo()" views/ → 0 résultat
-
-3. 📝 DOC docs/limitations_connues.md (NOUVEAU — 9 KB)
-   
-   Document d'auto-évaluation honnête qui :
-   - Liste les 7 choix d'architecture (statiques, CDN, etc.) avec justifications
-   - Documente les 2 corrections appliquées
-   - Donne le tableau récapitulatif effort/impact
-   - Liste les améliorations pro identifiées
+MEMBRE CONNECTÉ :
+   ✓ Icône 🛒 TOUJOURS visible
+   ✓ Sans badge si vide
+   ✓ Avec badge "N" si articles ajoutés
 
 ═══════════════════════════════════════════════════════════════
-  POURQUOI CES CORRECTIONS ?
+  POURQUOI CE CHOIX EST LE BON
 ═══════════════════════════════════════════════════════════════
 
-Ces 2 points (Open Redirect + SQL dans vue) sont différents des
-7 autres remarques (namespaces, tests, Composer, etc.) :
+1. STANDARD E-COMMERCE
+   Amazon, FNAC, Zalando, Shein, AliExpress :
+   → Tous affichent toujours l'icône panier, même vide
 
-   Les 7 autres = CHOIX D'ARCHITECTURE discutables mais justifiables
-   Ces 2-ci   = VRAIES FAILLES à corriger
+2. DÉCOUVERTE
+   Le visiteur sait IMMÉDIATEMENT qu'il a accès à un panier,
+   sans avoir besoin de tester ou deviner
 
-L'Open Redirect est une vulnérabilité OWASP réelle qui peut être
-exploitée pour du phishing. C'était la seule vraie faille du projet.
+3. COHÉRENCE VISUELLE
+   La nav ne change pas d'apparence selon l'état
+   → pas de "saut" UI quand on ajoute le 1er article
 
-Le SQL dans la vue était la seule entorse au MVC dans tout le projet.
-Le corriger garantit une cohérence à 100%.
+4. LOGIQUE FONCTIONNELLE
+   Pourquoi cacher quelque chose qui sert à la navigation ?
+   L'icône panier EST une fonctionnalité, pas une notification
+
+═══════════════════════════════════════════════════════════════
+  COMPARATEUR (non modifié)
+═══════════════════════════════════════════════════════════════
+
+Le comparateur reste caché si vide car :
+   - Outil ponctuel (pas une fonction "centrale")
+   - FNAC l'a, Amazon non → pas un standard universel
+   - Évite de surcharger la nav
+
+Si vous voulez le rendre toujours visible aussi, dites-le.
 
 ═══════════════════════════════════════════════════════════════
   INSTALLATION
 ═══════════════════════════════════════════════════════════════
 
 1. Extraire ce ZIP par-dessus C:\xampp\htdocs\pdvweb\
-2. Ctrl + F5 (pas de migration SQL)
-3. Commiter :
-   git add includes/ classes/ public/ views/ docs/
-   git commit -m "Securite : correction open redirect + sql dans vue + doc limitations"
+2. Ctrl + F5
+
+1 seul fichier modifié : includes/header.php
+Aucune migration SQL.
 
 ═══════════════════════════════════════════════════════════════
-  POINT FORT POUR LA DÉFENSE ORALE
+  POINT POUR LA DÉFENSE ORALE
 ═══════════════════════════════════════════════════════════════
 
-Si le prof pose des questions sur les choix techniques ou s'il
-identifie des "manques" :
-
-   "J'ai justement documenté tous ces points dans 
-    docs/limitations_connues.md, avec mes justifications et 
-    ce que je ferais en production."
-
-   → Vous avez 1 longueur d'avance, vous montrez votre maturité,
-     vous désamorcez la critique avant qu'elle arrive.
-
-═══════════════════════════════════════════════════════════════
-  STATS FINALES
-═══════════════════════════════════════════════════════════════
-   - 154 fichiers PHP
-   - 11 migrations SQL
-   - 0 erreur de syntaxe
-   - 0 SQL dans les vues (vérifié)
-   - 0 Open Redirect (vérifié)
-   - Documentation : 8 fichiers, ~2000 lignes
+"Le panier est toujours visible dans la barre de navigation,
+comme sur tous les e-commerces standards (Amazon, FNAC).
+C'est une fonctionnalité de navigation, pas une notification :
+elle doit donc rester accessible peu importe le contenu."
