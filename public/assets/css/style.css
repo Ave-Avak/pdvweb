@@ -326,3 +326,17 @@ a.btn:active {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* =====================================================================
+   Animation confetti pour la confirmation de commande
+   ===================================================================== */
+@keyframes confetti-fall {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(var(--rot-fin, 360deg));
+        opacity: 0;
+    }
+}

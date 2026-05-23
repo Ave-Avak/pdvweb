@@ -39,7 +39,7 @@ $idMembre      = Auth::id();
             <!-- Image illustrative en bandeau -->
             <div class="aspect-[3/1] bg-gray-100 overflow-hidden">
                 <img src="<?= h(asset_article($billet['image'])) ?>"
-                     alt="<?= h($billet['titre']) ?>"
+                     alt="<?= h($billet['titre']) ?>" loading="lazy"
                      class="w-full h-full object-cover">
             </div>
         <?php endif; ?>
@@ -52,7 +52,7 @@ $idMembre      = Auth::id();
         <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500 mb-5">
             <div class="flex items-center gap-2">
                 <img src="<?= h(asset_avatar($billet['auteur_avatar'])) ?>"
-                     alt="<?= h($billet['auteur_prenom']) ?>"
+                     alt="<?= h($billet['auteur_prenom']) ?>" loading="lazy"
                      class="w-8 h-8 rounded-full object-cover border border-gray-200">
                 <span class="font-medium text-gray-700">
                     <?= h($billet['auteur_prenom']) ?> <?= h($billet['auteur_nom']) ?>
@@ -102,7 +102,7 @@ $idMembre      = Auth::id();
         <!-- Likes -->
         <div class="mt-6 pt-5 border-t border-gray-100 flex items-center gap-3">
             <?php if (Auth::estConnecte()): ?>
-                <form method="post" action="<?= url('/like_toggle.php') ?>" class="inline">
+                <form method="post" action="<?= url('/like_toggle.php') ?>" data-like-ajax class="inline">
                     <?= Csrf::champ() ?>
                     <input type="hidden" name="type"      value="billet">
                     <input type="hidden" name="id_cible"  value="<?= (int)$billet['id_billet'] ?>">
@@ -112,7 +112,7 @@ $idMembre      = Auth::id();
                                    <?= $aLikeBillet ? 'bg-primary-50 text-primary-700 border-primary-300' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' ?>">
                         <span><?= $aLikeBillet ? '❤️' : '🤍' ?></span>
                         <?= $aLikeBillet ? 'Liké' : 'J\'aime' ?>
-                        <span class="text-xs opacity-75">(<?= (int)$nbLikes ?>)</span>
+                        <span class="text-xs opacity-75">(<span data-like-count style="display:inline-block;transition:transform 0.2s"><?= (int)$nbLikes ?></span>)</span>
                     </button>
                 </form>
             <?php else: ?>
@@ -185,7 +185,7 @@ $idMembre      = Auth::id();
                     <!-- En-tête : avatar + nom + date + actions -->
                     <header class="flex items-center gap-3 mb-3">
                         <img src="<?= h(asset_avatar($c['avatar'])) ?>"
-                             alt="<?= h(nom_membre($c)) ?>"
+                             alt="<?= h(nom_membre($c)) ?>" loading="lazy"
                              class="w-9 h-9 rounded-full object-cover border border-gray-200">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 flex-wrap">
@@ -289,7 +289,7 @@ $idMembre      = Auth::id();
                     <!-- Like sur le commentaire -->
                     <footer class="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2">
                         <?php if (Auth::estConnecte()): ?>
-                            <form method="post" action="<?= url('/like_toggle.php') ?>" class="inline">
+                            <form method="post" action="<?= url('/like_toggle.php') ?>" data-like-ajax class="inline">
                                 <?= Csrf::champ() ?>
                                 <input type="hidden" name="type"      value="commentaire">
                                 <input type="hidden" name="id_cible"  value="<?= (int)$c['id_commentaire'] ?>">

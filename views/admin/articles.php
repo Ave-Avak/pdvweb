@@ -48,7 +48,7 @@ require_once INCLUDES_PATH . '/header.php';
                                 <div class="flex items-center gap-3">
                                     <div class="w-10 h-10 bg-gray-100 rounded overflow-hidden flex-shrink-0">
                                         <img src="<?= h(asset_article($a['image'])) ?>"
-                                             alt=""
+                                             alt="" loading="lazy"
                                              class="w-full h-full object-cover">
                                     </div>
                                     <a href="<?= url('/article.php?id=' . (int)$a['id_article']) ?>"

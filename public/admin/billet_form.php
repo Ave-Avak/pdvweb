@@ -84,7 +84,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $uploadEffectue = false;
 
     if (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
-        $res = Upload::image($_FILES['image'], UPLOADS_PATH . '/articles');
+        // Image de billet : on accepte les mêmes formats que les articles
+        $extensionsBillet = ['gif', 'jpg', 'jpeg', 'png', 'webp'];
+        $res = Upload::image($_FILES['image'], UPLOADS_PATH . '/articles', $extensionsBillet);
         if (!$res['succes']) {
             $erreurs['image'] = $res['erreur'];
         } else {

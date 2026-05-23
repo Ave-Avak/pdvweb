@@ -29,22 +29,30 @@ class Upload
 {
     /**
      * Types MIME autorisés (mapping extension -> MIME).
+     * Liste étendue, utilisée comme référence interne.
      */
     private const MIMES_AUTORISES = [
         'gif'  => ['image/gif'],
         'jpg'  => ['image/jpeg'],
         'jpeg' => ['image/jpeg'],
+        'png'  => ['image/png'],
+        'webp' => ['image/webp'],
     ];
 
     /**
      * Tente d'uploader une image.
      *
-     * @param array  $fichier        Élément de $_FILES (ex: $_FILES['avatar'])
-     * @param string $dossierCible   Chemin absolu où stocker le fichier
+     * @param array      $fichier        Élément de $_FILES (ex: $_FILES['avatar'])
+     * @param string     $dossierCible   Chemin absolu où stocker le fichier
+     * @param array|null $extensionsAutorisees Liste d'extensions personnalisée
+     *                                          (par défaut : UPLOAD_EXTENSIONS du config)
      * @return array ['succes' => bool, 'fichier' => string|null, 'erreur' => string|null]
      */
-    public static function image(array $fichier, string $dossierCible): array
+    public static function image(array $fichier, string $dossierCible, ?array $extensionsAutorisees = null): array
     {
+        // Par défaut, utilise la whitelist globale du config
+        $extensions = $extensionsAutorisees ?? UPLOAD_EXTENSIONS;
+
         // -----------------------------------------------------------------
         // 1. Aucun fichier envoyé ?
         // -----------------------------------------------------------------
@@ -77,8 +85,8 @@ class Upload
         // c'est juste une PRÉ-vérif. La vraie vérif sera le MIME (étape 5).
         $extension = strtolower(pathinfo($fichier['name'], PATHINFO_EXTENSION));
 
-        if (!in_array($extension, UPLOAD_EXTENSIONS, true)) {
-            $list = implode(', ', UPLOAD_EXTENSIONS);
+        if (!in_array($extension, $extensions, true)) {
+            $list = implode(', ', $extensions);
             return ['succes' => false, 'fichier' => null,
                     'erreur' => "Format non autorisé. Formats acceptés : $list."];
         }
@@ -92,7 +100,8 @@ class Upload
         $mimeReel = finfo_file($finfo, $fichier['tmp_name']);
         finfo_close($finfo);
 
-        if (!in_array($mimeReel, self::MIMES_AUTORISES[$extension], true)) {
+        $mimesAttendus = self::MIMES_AUTORISES[$extension] ?? [];
+        if (!in_array($mimeReel, $mimesAttendus, true)) {
             return ['succes' => false, 'fichier' => null,
                     'erreur' => "Le contenu du fichier ne correspond pas à son extension."];
         }

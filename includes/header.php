@@ -318,6 +318,78 @@ $membreConnecte = Auth::membre();
                         Inscription
                     </a>
                 <?php endif; ?>
+
+                <!-- Bouton hamburger (mobile uniquement) -->
+                <button type="button"
+                        id="btn-hamburger"
+                        aria-label="Ouvrir le menu"
+                        aria-expanded="false"
+                        aria-controls="menu-mobile"
+                        class="md:hidden p-2 text-gray-700 hover:text-primary-600 transition">
+                    <svg id="icone-hamburger" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                    <svg id="icone-fermer" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Menu mobile (panneau qui descend en dessous de la nav) -->
+        <div id="menu-mobile" class="md:hidden hidden border-t border-gray-200 mt-3 pt-3 pb-2">
+            <div class="flex flex-col gap-1">
+                <a href="<?= url('/index.php') ?>"
+                   class="px-4 py-3 rounded-md text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-100 transition <?= actif('/index.php') ?>">
+                    🏠 Accueil
+                </a>
+                <a href="<?= url('/catalogue.php') ?>"
+                   class="px-4 py-3 rounded-md text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-100 transition <?= actif('/catalogue.php') ?>">
+                    🛍️ Catalogue
+                </a>
+                <a href="<?= url('/blog.php') ?>"
+                   class="px-4 py-3 rounded-md text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-100 transition <?= actif('/blog.php') ?>">
+                    📰 Blog
+                </a>
+                <?php if ($membreConnecte): ?>
+                    <a href="<?= url('/minichat.php') ?>"
+                       class="px-4 py-3 rounded-md text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-100 transition <?= actif('/minichat.php') ?>">
+                        💬 Mini-chat
+                    </a>
+                    <div class="border-t border-gray-200 my-2"></div>
+                    <a href="<?= url('/profil.php') ?>"
+                       class="px-4 py-3 rounded-md text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-100 transition">
+                        👤 Mon profil
+                    </a>
+                    <a href="<?= url('/favoris.php') ?>"
+                       class="px-4 py-3 rounded-md text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-100 transition">
+                        ❤️ Mes favoris
+                    </a>
+                    <a href="<?= url('/historique.php') ?>"
+                       class="px-4 py-3 rounded-md text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-100 transition">
+                        📦 Mes achats
+                    </a>
+                    <?php if (Auth::estAdmin()): ?>
+                        <a href="<?= url('/admin/index.php') ?>"
+                           class="px-4 py-3 rounded-md text-sm font-medium text-purple-700 hover:bg-purple-50 transition">
+                            👑 Administration
+                        </a>
+                    <?php endif; ?>
+                    <a href="<?= url('/logout.php') ?>"
+                       class="px-4 py-3 rounded-md text-sm font-medium text-red-600 hover:bg-red-50 transition">
+                        🚪 Déconnexion
+                    </a>
+                <?php else: ?>
+                    <div class="border-t border-gray-200 my-2"></div>
+                    <a href="<?= url('/login.php') ?>"
+                       class="px-4 py-3 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition">
+                        🔐 Connexion
+                    </a>
+                    <a href="<?= url('/inscription.php') ?>"
+                       class="px-4 py-3 rounded-md text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 transition text-center">
+                        ✨ Créer un compte
+                    </a>
+                <?php endif; ?>
             </div>
         </div>
     </nav>

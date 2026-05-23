@@ -53,5 +53,8 @@ $articlesSimilaires = array_slice($articlesSimilaires, 0, 4);
 // Tags associés (Phase 3.2)
 $tagsArticle = Article::tagsDe($idArticle);
 
+// Galerie d'images (migration 12)
+$imagesGalerie = Article::imagesDe($idArticle);
+
 $titre = $article['nom'];
 require_once VIEWS_PATH . '/catalogue/detail.php';

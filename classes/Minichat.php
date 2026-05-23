@@ -38,7 +38,8 @@ class Minichat
     {
         $req = Db::pdo()->prepare(
             "SELECT m.id_message, m.message, m.date_message, m.pseudo,
-                    u.id_membre, u.prenom, u.nom, u.login, u.avatar, u.statut
+                    u.id_membre, u.prenom, u.nom, u.login, u.avatar, u.statut,
+                    u.date_anonymisation
              FROM minichat m
              INNER JOIN membre u ON u.id_membre = m.id_membre
              ORDER BY m.date_message DESC

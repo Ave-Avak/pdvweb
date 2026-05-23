@@ -43,7 +43,7 @@ require_once INCLUDES_PATH . '/header.php';
                     <a href="<?= url('/article.php?id=' . (int)$a['id_article']) ?>" class="block">
                         <div class="aspect-square bg-gray-100 overflow-hidden">
                             <img src="<?= h(asset_article($a['image'])) ?>"
-                                 alt="<?= h($a['nom']) ?>"
+                                 alt="<?= h($a['nom']) ?>" loading="lazy"
                                  class="w-full h-full object-cover group-hover:scale-105 transition">
                         </div>
                     </a>

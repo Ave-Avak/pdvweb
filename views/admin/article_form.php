@@ -77,17 +77,35 @@ require_once INCLUDES_PATH . '/header.php';
         </div>
 
         <div>
-            <label for="image" class="block text-sm font-medium text-gray-700 mb-1">Image</label>
+            <label for="image" class="block text-sm font-medium text-gray-700 mb-1">Image principale</label>
             <?php if (!empty($donnees['image'])): ?>
                 <div class="mb-2">
                     <img src="<?= h(asset_article($donnees['image'])) ?>"
                          class="w-24 h-24 object-cover rounded-lg border border-gray-200">
                 </div>
             <?php endif; ?>
-            <input type="file" id="image" name="image" accept=".jpg,.jpeg,.gif"
+            <input type="file" id="image" name="image" accept=".jpg,.jpeg,.gif,.png,.webp"
                    class="block text-sm">
-            <p class="text-xs text-gray-500 mt-1">Formats acceptés : JPG, JPEG, GIF.</p>
+            <p class="text-xs text-gray-500 mt-1">Formats acceptés : JPG, JPEG, GIF, PNG, WebP.</p>
             <?php if (isset($erreurs['image'])): ?><p class="text-sm text-red-600 mt-1"><?= h($erreurs['image']) ?></p><?php endif; ?>
+
+            <?php if ($modeEdition): ?>
+                <?php $nbImages = Article::nbImages($idArticle); ?>
+                <div class="mt-3 p-3 bg-primary-50 border border-primary-200 rounded-lg">
+                    <a href="<?= url('/admin/article_galerie.php?id=' . (int)$idArticle) ?>"
+                       class="text-sm text-primary-700 font-semibold hover:underline flex items-center gap-2">
+                        🖼️ Gérer la galerie d'images
+                        <?php if ($nbImages > 0): ?>
+                            <span class="px-2 py-0.5 bg-primary-200 text-primary-800 text-xs rounded-full">
+                                <?= $nbImages ?> image<?= $nbImages > 1 ? 's' : '' ?>
+                            </span>
+                        <?php endif; ?>
+                    </a>
+                    <p class="text-xs text-primary-600 mt-1">
+                        Ajoutez plusieurs vues du produit pour un carrousel sur la fiche article.
+                    </p>
+                </div>
+            <?php endif; ?>
         </div>
 
         <!-- Tags (Phase 3.2) -->

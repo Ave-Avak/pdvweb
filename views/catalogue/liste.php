@@ -39,6 +39,9 @@ $construireUrl = function (array $params) {
                     </svg>
                     <input type="text" name="q" value="<?= h($recherche) ?>"
                            placeholder="Rechercher un produit..."
+                           data-autocomplete-url="<?= url('/api/recherche.php') ?>"
+                           data-autocomplete-type="articles"
+                           autocomplete="off"
                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
                 </div>
 
@@ -209,7 +212,7 @@ $construireUrl = function (array $params) {
                         <!-- Image -->
                         <div class="aspect-square bg-gray-100 overflow-hidden">
                             <img src="<?= h(asset_article($a['image'])) ?>"
-                                 alt="<?= h($a['nom']) ?>"
+                                 alt="<?= h($a['nom']) ?>" loading="lazy"
                                  class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
                         </div>
                     </a>
@@ -236,7 +239,7 @@ $construireUrl = function (array $params) {
                         <div class="flex items-center justify-between mt-1">
                             <span class="text-lg font-bold text-gray-900"><?= format_prix($a['prix']) ?></span>
                             <?php if ((int)$a['stock'] > 0): ?>
-                                <form method="post" action="<?= url('/panier_add.php') ?>" class="inline">
+                                <form method="post" action="<?= url('/panier_add.php') ?>" class="inline" data-panier-ajax>
                                     <?= Csrf::champ() ?>
                                     <input type="hidden" name="id_article" value="<?= (int)$a['id_article'] ?>">
                                     <input type="hidden" name="retour" value="<?= h($_SERVER['REQUEST_URI']) ?>">

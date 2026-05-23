@@ -114,9 +114,17 @@ $nbAffiches  = Minichat::nbAffiches();
                     ?>
                     <article class="px-5 py-4 flex gap-3 hover:bg-gray-50 transition group">
 
+                        <?php
+                        // Si le membre est anonymisé (RGPD), on cache son identité réelle
+                        $estAnonymise = !empty($m['date_anonymisation']);
+                        $nomAffiche   = $estAnonymise
+                            ? 'Utilisateur supprimé'
+                            : ($m['pseudo'] ?? $m['login']);
+                        ?>
+
                         <!-- Avatar -->
-                        <img src="<?= h(asset_avatar($m['avatar'])) ?>"
-                             alt="<?= h($m['prenom']) ?>"
+                        <img src="<?= $estAnonymise ? asset('assets/img/avatar-defaut.svg') : h(asset_avatar($m['avatar'])) ?>"
+                             alt="<?= h($nomAffiche) ?>"
                              class="w-10 h-10 rounded-full object-cover border border-gray-200 flex-shrink-0"
                              onerror="this.src='<?= asset('assets/img/avatar-defaut.svg') ?>'">
 
@@ -124,16 +132,15 @@ $nbAffiches  = Minichat::nbAffiches();
                         <div class="flex-1 min-w-0">
                             <!-- Ligne du dessus : pseudo + date + bouton supprimer -->
                             <div class="flex items-baseline gap-2 flex-wrap">
-                                <span class="font-semibold text-gray-900 text-sm">
-                                    <?= h($m['pseudo'] ?? $m['login']) ?>
+                                <span class="font-semibold <?= $estAnonymise ? 'text-gray-400 italic' : 'text-gray-900' ?> text-sm">
+                                    <?= h($nomAffiche) ?>
                                 </span>
 
                                 <?php
                                 // Visible UNIQUEMENT par les administrateurs :
                                 // affiche le vrai login derrière le pseudo (modération).
-                                // Le pseudo a beau être différent du login, l'admin
-                                // peut toujours identifier qui est derrière.
-                                if (Auth::estAdmin() && ($m['pseudo'] ?? '') !== $m['login']):
+                                // (Mais pas pour les comptes anonymisés — RGPD)
+                                if (!$estAnonymise && Auth::estAdmin() && ($m['pseudo'] ?? '') !== $m['login']):
                                 ?>
                                     <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-mono"
                                           title="Login réel (visible uniquement par l'administrateur)">
@@ -141,7 +148,7 @@ $nbAffiches  = Minichat::nbAffiches();
                                     </span>
                                 <?php endif; ?>
 
-                                <?php if ($m['statut'] === 'admin'): ?>
+                                <?php if (!$estAnonymise && $m['statut'] === 'admin'): ?>
                                     <span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-semibold uppercase">
                                         Admin
                                     </span>

@@ -25,11 +25,69 @@ $qteMax = min((int)$article['stock'], Panier::quantiteMaxParArticle());
     <!-- En-tête article -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
         <div class="grid md:grid-cols-2 gap-6">
-            <!-- Image -->
-            <div class="aspect-square bg-gray-100">
-                <img src="<?= h(asset_article($article['image'])) ?>"
-                     alt="<?= h($article['nom']) ?>"
-                     class="w-full h-full object-cover">
+            <!-- Galerie d'images (carrousel) -->
+            <?php
+            // Construit la liste : image principale + galerie
+            $toutesImages = [];
+            if (!empty($article['image'])) {
+                $toutesImages[] = $article['image'];
+            }
+            foreach ($imagesGalerie as $img) {
+                $toutesImages[] = $img['fichier'];
+            }
+            // S'il n'y a aucune image, on garde un placeholder
+            if (empty($toutesImages)) {
+                $toutesImages[] = null;  // déclenchera l'asset par défaut
+            }
+            ?>
+            <div class="p-4" data-carrousel>
+                <!-- Image principale (active) -->
+                <div class="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3 relative">
+                    <?php foreach ($toutesImages as $idx => $img): ?>
+                        <img src="<?= h(asset_article($img)) ?>"
+                             alt="<?= h($article['nom']) ?> - vue <?= $idx + 1 ?>" loading="lazy"
+                             data-carrousel-image="<?= $idx ?>"
+                             class="w-full h-full object-cover absolute inset-0 transition-opacity duration-300 <?= $idx === 0 ? 'opacity-100' : 'opacity-0' ?>">
+                    <?php endforeach; ?>
+
+                    <?php if (count($toutesImages) > 1): ?>
+                        <!-- Boutons précédent/suivant -->
+                        <button type="button" data-carrousel-prev
+                                class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow flex items-center justify-center hover:bg-white transition"
+                                aria-label="Image précédente">
+                            <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                            </svg>
+                        </button>
+                        <button type="button" data-carrousel-next
+                                class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow flex items-center justify-center hover:bg-white transition"
+                                aria-label="Image suivante">
+                            <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+
+                        <!-- Compteur "1 / 4" -->
+                        <div class="absolute bottom-3 right-3 px-2 py-1 bg-black/60 text-white text-xs rounded backdrop-blur">
+                            <span data-carrousel-current>1</span> / <?= count($toutesImages) ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Miniatures -->
+                <?php if (count($toutesImages) > 1): ?>
+                    <div class="grid grid-cols-4 gap-2">
+                        <?php foreach ($toutesImages as $idx => $img): ?>
+                            <button type="button"
+                                    data-carrousel-thumb="<?= $idx ?>"
+                                    class="aspect-square bg-gray-100 rounded-md overflow-hidden border-2 transition <?= $idx === 0 ? 'border-primary-500' : 'border-transparent hover:border-gray-300' ?>">
+                                <img src="<?= h(asset_article($img)) ?>"
+                                     alt="Miniature <?= $idx + 1 ?>" loading="lazy"
+                                     class="w-full h-full object-cover">
+                            </button>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <!-- Infos -->
@@ -104,7 +162,7 @@ $qteMax = min((int)$article['stock'], Panier::quantiteMaxParArticle());
                     <?php endif; ?>
 
                     <?php if (Auth::estConnecte()): ?>
-                        <form method="post" action="<?= url('/favori_toggle.php') ?>">
+                        <form method="post" action="<?= url('/favori_toggle.php') ?>" data-favori-ajax>
                             <?= Csrf::champ() ?>
                             <input type="hidden" name="id_article" value="<?= (int)$article['id_article'] ?>">
                             <input type="hidden" name="retour" value="<?= h(url('/article.php?id=' . $article['id_article'])) ?>">
@@ -197,7 +255,7 @@ $qteMax = min((int)$article['stock'], Panier::quantiteMaxParArticle());
                     <article class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                         <div class="flex items-center gap-3 mb-2">
                             <img src="<?= h(asset_avatar($n['avatar'])) ?>"
-                                 alt="<?= h(nom_membre($n)) ?>"
+                                 alt="<?= h(nom_membre($n)) ?>" loading="lazy"
                                  class="w-8 h-8 rounded-full object-cover border border-gray-200">
                             <div class="flex-1">
                                 <p class="font-semibold text-sm <?= !empty($n['date_anonymisation']) ? 'italic text-gray-500' : 'text-gray-900' ?>">
@@ -233,7 +291,7 @@ $qteMax = min((int)$article['stock'], Panier::quantiteMaxParArticle());
                        class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition group">
                         <div class="aspect-square bg-gray-100 overflow-hidden">
                             <img src="<?= h(asset_article($s['image'])) ?>"
-                                 alt="<?= h($s['nom']) ?>"
+                                 alt="<?= h($s['nom']) ?>" loading="lazy"
                                  class="w-full h-full object-cover">
                         </div>
                         <div class="p-3">

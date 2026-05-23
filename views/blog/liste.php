@@ -46,6 +46,9 @@ $construireUrl = function (array $params) {
                     </svg>
                     <input type="text" name="q" value="<?= h($recherche) ?>"
                            placeholder="Rechercher dans les titres..."
+                           data-autocomplete-url="<?= url('/api/recherche.php') ?>"
+                           data-autocomplete-type="billets"
+                           autocomplete="off"
                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
                 </div>
 

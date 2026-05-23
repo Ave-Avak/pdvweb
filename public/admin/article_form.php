@@ -63,7 +63,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Upload d'image (si présent)
     if (!empty($_FILES['image']['name'])) {
-        $upload = Upload::image($_FILES['image'], UPLOADS_PATH . '/articles');
+        // Image principale d'article : on accepte les mêmes formats que la galerie
+        // (PNG et WebP en plus, vs avatars qui restent gif/jpeg selon CDC)
+        $extensionsArticle = ['gif', 'jpg', 'jpeg', 'png', 'webp'];
+        $upload = Upload::image($_FILES['image'], UPLOADS_PATH . '/articles', $extensionsArticle);
         if ($upload['succes']) {
             // Supprime l'ancienne image si elle existait
             if ($modeEdition && !empty($article['image'])) {

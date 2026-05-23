@@ -88,7 +88,7 @@ require_once INCLUDES_PATH . '/header.php';
             <?php endif; ?>
 
             <input type="file" id="image" name="image"
-                   accept=".gif,.jpg,.jpeg,image/gif,image/jpeg"
+                   accept=".gif,.jpg,.jpeg,.png,.webp,image/gif,image/jpeg,image/png,image/webp"
                    class="block w-full text-sm text-gray-700
                           file:mr-4 file:py-2 file:px-4
                           file:rounded-md file:border-0

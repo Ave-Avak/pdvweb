@@ -404,4 +404,102 @@ class Article
         $req->execute($params);
         return $req->fetchAll();
     }
+
+
+    // =================================================================
+    // GALERIE D'IMAGES (migration 12)
+    // =================================================================
+
+    /**
+     * Liste les images d'un article (galerie).
+     * L'image principale (article.image) n'est PAS incluse, seulement les
+     * images supplémentaires.
+     *
+     * @param int $idArticle
+     * @return array Liste d'images [['id_image', 'fichier', 'ordre'], ...]
+     */
+    public static function imagesDe(int $idArticle): array
+    {
+        try {
+            $req = Db::pdo()->prepare(
+                "SELECT * FROM article_image
+                 WHERE id_article = ?
+                 ORDER BY ordre ASC, id_image ASC"
+            );
+            $req->execute([$idArticle]);
+            return $req->fetchAll();
+        } catch (Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Ajoute une image à la galerie d'un article.
+     *
+     * @param int $idArticle
+     * @param string $fichier Nom du fichier (déjà uploadé dans /uploads/articles/)
+     * @param int $ordre
+     * @return int id_image créé, ou 0 si échec
+     */
+    public static function ajouterImage(int $idArticle, string $fichier, int $ordre = 0): int
+    {
+        try {
+            $pdo = Db::pdo();
+            $req = $pdo->prepare(
+                "INSERT INTO article_image (id_article, fichier, ordre) VALUES (?, ?, ?)"
+            );
+            $req->execute([$idArticle, $fichier, $ordre]);
+            return (int)$pdo->lastInsertId();
+        } catch (Throwable $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Supprime une image de la galerie (BDD + fichier).
+     *
+     * @param int $idImage
+     * @return bool
+     */
+    public static function supprimerImage(int $idImage): bool
+    {
+        try {
+            // 1. Récupérer le nom du fichier
+            $req = Db::pdo()->prepare("SELECT fichier FROM article_image WHERE id_image = ?");
+            $req->execute([$idImage]);
+            $fichier = $req->fetchColumn();
+
+            if (!$fichier) {
+                return false;
+            }
+
+            // 2. Supprimer le fichier physique
+            Upload::supprimer($fichier, UPLOADS_PATH . '/articles');
+
+            // 3. Supprimer la ligne BDD
+            $req = Db::pdo()->prepare("DELETE FROM article_image WHERE id_image = ?");
+            return $req->execute([$idImage]);
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Compte le nombre d'images d'un article.
+     *
+     * @param int $idArticle
+     * @return int
+     */
+    public static function nbImages(int $idArticle): int
+    {
+        try {
+            $req = Db::pdo()->prepare(
+                "SELECT COUNT(*) FROM article_image WHERE id_article = ?"
+            );
+            $req->execute([$idArticle]);
+            return (int)$req->fetchColumn();
+        } catch (Throwable $e) {
+            return 0;
+        }
+    }
 }
